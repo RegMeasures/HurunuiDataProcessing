@@ -13,8 +13,8 @@ addpath('inputs')
 % Main data drive/folder
 %DataFolder = 'C:\Projects\Hurunui';
 %DataFolder = '\\engcad4\GISdump\Richard\';
-%DataFolder = 'H:\Hapua\Individual_Hapua\Hurunui\';
-DataFolder = 'E:\Hurunui';
+DataFolder = 'H:\Hapua\Individual_Hapua\Hurunui\';
+%DataFolder = 'E:\Hurunui';
 
 % Photo directory containing all images
 PhotoFolder = '\PhotoRecord\ImageStore';
@@ -52,12 +52,13 @@ AllPhotos = genPhotoDataTable(fullfile(DataFolder,PhotoFolder));
 [~ ,~ ,~ ,~ ,CaptureMins ,~ ] = datevec(AllPhotos.CaptureTime);
 Photos = AllPhotos(CaptureMins==30 | CaptureMins==0,:);
 
+%% Load previously calculated metrics to avoid duplication of effort
+PhotosPrevious = load('outputs\PhotoDatabase.mat');
+PhotosPrevious = PhotosPrevious.Photos;
+
 %% Generate quality metrics and assess quality
 
 % generate metrics
-PhotosPrevious = load(fullfile(DataFolder,'\PhotoRecord\PhotoDatabase.mat'));
-PhotosPrevious = struct2table(PhotosPrevious.Photos);
-
 Photos = photoQuality(fullfile(DataFolder,PhotoFolder),Photos,PhotosPrevious);
 %Photos = photoQuality(fullfile(DataFolder,PhotoFolder),Photos);
 
@@ -67,8 +68,7 @@ Photos.QualityOk = Photos.Sharpness > SharpThresh & ...
                    Photos.Brightness > BrightThresh;
                
 % Save photo database as generating metrics takes a long time
-save(fullfile(DataFolder,'\PhotoRecord\PhotoDatabase.mat'),...
-     'Photos')
+save('outputs\PhotoDatabase.mat','Photos')
  
 % load(fullfile(DataFolder,'\PhotoRecord\PhotoDatabase.mat'));
  
