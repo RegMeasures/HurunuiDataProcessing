@@ -4,12 +4,11 @@ function Config = TimeseriesConfig()
 %% Data file locations
 
 % Main data drive/folder
-Config.DataFolder = 'H:\Hapua\Individual_Hapua\Hurunui';
+%Config.DataFolder = 'H:\Hapua\Individual_Hapua\Hurunui';
 %Config.DataFolder = '\\engcad4\GISdump\Richard\';
-%Config.DataFolder = 'F:\Hurunui';
+Config.DataFolder = 'E:\Hurunui';
 
-% River flow timeseries exported from tideda
-Config.HurunuiSH1File = '\TimeseriesData\HurunuiSH1Flow.csv';
+% River flow timeseries from ECan web services
 Config.HurunuiSH1EcanData = 'http://data.ecan.govt.nz/data/79/Water/River%20stage%20flow%20data%20for%20individual%20site/CSV?SiteNo=65101&Period=All&StageFlow=River%20Flow';
 
 % Lagoon level timeseries exported from NEON
@@ -40,7 +39,7 @@ Config.SumnerOffset = 0;
 % Time Offsets
 Config.TimeZone = 12;
 Config.Sumner2Hurunui = 19/60/24; % Hurunui tides roughly 19 minutes after Sumner
-Config.SH1_to_lagoon = 2.6/24; % Mandamus to SH1 = ~8 hours (56.5km) SH1 to lagoon = 18.4km therefore 2.6hrs\
+Config.SH1_to_lagoon = hours(2.6); % Mandamus to SH1 = ~8 hours (56.5km) SH1 to lagoon = 18.4km therefore 2.6hrs\
 
 %% Other parameters
 Config.OnshoreDir = 308; % Shoreline angle - given as direction of a shore normal line towards the coast in degrees

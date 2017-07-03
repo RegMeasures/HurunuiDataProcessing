@@ -16,29 +16,23 @@ Config = TimeseriesConfig;
 
 %% Load Data and apply datum corrections etc.
 
-% Load Hurunui at SH1 flow data from TidedaCSV
-% HurunuiSH1 = readtable(fullfile(Config.DataFolder,Config.HurunuiSH1File),...
-%                        'Delimiter',',',...
-%                        'HeaderLines',2,...
-%                        'ReadVariableNames',false);
-% HurunuiSH1.Properties.VariableNames = {'DateTime', 'Flow'};
-% HurunuiSH1.DateTime = datenum(HurunuiSH1.DateTime,'dd/mm/yyyy HH:MM:SS');
-
 % Load Hurunui at SH1 data from web :-)
 HurunuiCSV = urlread(Config.HurunuiSH1EcanData);
 HurCellArray = textscan(HurunuiCSV,'%*d %s %f',...
                       'delimiter',',',...
                       'headerlines',1);
-HurunuiSH1.DateTime = HurCellArray{1,1};
-HurunuiSH1.DateTime = strrep(HurunuiSH1.DateTime,'a.m.','AM');
-HurunuiSH1.DateTime = strrep(HurunuiSH1.DateTime,'p.m.','PM');
-HurunuiSH1.DateTime = datenum(HurunuiSH1.DateTime,'dd/mm/yyyy HH:MM:SS PM');
-HurunuiSH1.Flow = HurCellArray{1,2};
-HurunuiSH1 = struct2table(HurunuiSH1);
+RiverTS.DateTime = HurCellArray{1,1};
+RiverTS.DateTime = strrep(RiverTS.DateTime,'a.m.','AM');
+RiverTS.DateTime = strrep(RiverTS.DateTime,'p.m.','PM');
+RiverTS.DateTime = datetime(RiverTS.DateTime,...
+                               'format','dd/MM/yyyy hh:mm:ss a');
+RiverTS.DateTime.Format = 'dd/MM/yyyy HH:mm';
+RiverTS.Flow = HurCellArray{1,2};
+RiverTS = struct2table(RiverTS);
 clear HurunuiCSV HurCellArray
 
 % Apply time delay to account for travel time from SH1 to coast
-HurunuiSH1.DateTime = HurunuiSH1.DateTime + Config.SH1_to_lagoon;
+RiverTS.DateTime = RiverTS.DateTime + Config.SH1_to_lagoon;
 
 % Load lagoon water level data
 LagoonTS = readtable(fullfile(Config.DataFolder,Config.LagoonWLFile),...
@@ -54,8 +48,9 @@ LagoonTS.WL = LagoonTS.WL / 1000;
 LagoonTS.WL = LagoonTS.WL + Config.LagoonOffset; 
 
 % Convert Date and Time cols to datenum
-LagoonTS.DateTime = datenum(strcat(LagoonTS.Date,LagoonTS.Time),...
-                          'dd/mm/yyyyHH:MM:SS');
+LagoonTS.DateTime = datetime(strcat(LagoonTS.Date,LagoonTS.Time),...
+                             'format','dd/MM/yyyyHH:mm:ss');
+LagoonTS.DateTime.Format = 'dd/MM/yyyy HH:mm';
 LagoonTS.Date = []; % Remove date col as no longer needed
 LagoonTS.Time = []; % Remove Time col as no longer needed
 LagoonTS = [LagoonTS(:,2),LagoonTS(:,1)]; % re-order columns
@@ -71,7 +66,9 @@ SumnerTS = readtable(fullfile(Config.DataFolder,Config.SumnerFile),...
                      'HeaderLines',2,...
                      'ReadVariableNames',false);
 SumnerTS.Properties.VariableNames = {'DateTime', 'WL'};
-SumnerTS.DateTime = datenum(SumnerTS.DateTime,'dd/mm/yyyy HH:MM:SS');
+SumnerTS.DateTime = datetime(SumnerTS.DateTime, ...
+                             'format','dd/MM/yyyy HH:mm:ss');
+SumnerTS.DateTime.Format = 'dd/MM/yyyy HH:mm';
 
 % apply datum correction
 SumnerTS.WL = SumnerTS.WL + Config.SumnerOffset; 
@@ -82,7 +79,9 @@ SumnerBaroTS = readtable(fullfile(Config.DataFolder,Config.SumnerBaroFile),...
                      'HeaderLines',2,...
                      'ReadVariableNames',false);
 SumnerBaroTS.Properties.VariableNames = {'DateTime', 'Baro'};
-SumnerBaroTS.DateTime = datenum(SumnerBaroTS.DateTime,'dd/mm/yyyy HH:MM:SS');
+SumnerBaroTS.DateTime = datetime(SumnerBaroTS.DateTime, ...
+                                 'format','dd/MM/yyyy HH:mm:ss');
+SumnerBaroTS.DateTime.Format = 'dd/MM/yyyy HH:mm';
 
 % Load Hurunui barometric pressure data
 % use cheviot for now from CliFlow (site 31832)
@@ -93,7 +92,8 @@ HurunuiBaroTS = readtable(fullfile(Config.DataFolder,Config.HurunuiBaroFile),...
                      'ReadVariableNames',false);
 HurunuiBaroTS(:,[1,4:7]) = [];
 HurunuiBaroTS.Properties.VariableNames = {'DateTime', 'Baro'};
-HurunuiBaroTS.DateTime = datenum(HurunuiBaroTS.DateTime,'yyyymmdd:HHMM');
+HurunuiBaroTS.DateTime = datetime(HurunuiBaroTS.DateTime, ...
+                                  'format','yyyyMMdd:HHmm');
 
 % Read wavedata
 % - tideda exports for same time period and synchronised to 30min intervals
@@ -102,18 +102,18 @@ WaveTS = readtable(fullfile(Config.DataFolder,Config.WaveCSV1),...
                    'Delimiter',',',...
                    'HeaderLines',1,...
                    'ReadVariableNames',true);
-WaveTS.Date = datenum(WaveTS.Date,'dd/mm/yyyy HH:MM:SS');
+WaveTS.Date = datetime(WaveTS.Date,'format','dd/MM/yyyy HH:mm:ss');
 
 WaveTS2 = readtable(fullfile(Config.DataFolder,Config.WaveCSV2),...
                     'Delimiter',',',...
                     'HeaderLines',1,...
                     'ReadVariableNames',true);
-WaveTS2.Date = datenum(WaveTS2.Date,'dd/mm/yyyy HH:MM:SS');
+WaveTS2.Date = datetime(WaveTS2.Date,'format','dd/MM/yyyy HH:mm:ss');
 
 % Combine wavedata into 1 table
 WaveTS = [WaveTS, WaveTS2(:,2:end)]; % if this line doesn't work check tideda exports for same time period and synchronised to 30min intervals
 clear WaveTS2
-WaveTS{:,2:end} = num2cell(str2double(WaveTS{:,2:end}));
+%WaveTS{:,2:end} = num2cell(str2double(WaveTS{:,2:end}));
 
 %% Data QA
 
@@ -124,13 +124,11 @@ DataOk(LagoonTS.WL<-0.1) = false;
 LagoonTS = LagoonTS(DataOk,:);
 figure
 plot(LagoonTS.DateTime,LagoonTS.WL)
-datetick('x')
 ylabel('Measured Lagoon Water Level [m-LVD]')
 
 % Inflow TS
 figure
-plot(HurunuiSH1.DateTime,HurunuiSH1.Flow);
-datetick('x')
+plot(RiverTS.DateTime,RiverTS.Flow);
 ylabel('Measured Hurunui Flow [m^3/s]')
 
 % Sumner sea level
@@ -145,7 +143,6 @@ SumnerTS = SumnerTS(DataOk,:);
 % Plot
 figure
 plot(SumnerTS.DateTime,SumnerTS.WL,'b-');
-datetick('x')
 ylabel('Sumner Sea Level [m-LVD]')
 
 % Sumner Baro
@@ -157,7 +154,6 @@ SumnerBaroTS = SumnerBaroTS(DataOk,:);
 % Plot
 figure
 plot(SumnerBaroTS.DateTime,SumnerBaroTS.Baro,'b-');
-datetick('x')
 ylabel('Air pressure [hPa]')
 
 % Hurunui Baro
@@ -189,7 +185,7 @@ HurunuiTide = struct2table(HurunuiTide);
 % Calculate astronomic tide at Hurunui
 [HurunuiTide.Astronomic] = ...
     AstronomicTide(fullfile(Config.DataFolder,Config.HurunuiTidalConstFile),...
-                   HurunuiTide.DateTime, Config.TimeZone);
+                   datenum(HurunuiTide.DateTime), Config.TimeZone);
 
 % Put Hurunui barometric pressure reading onto same timeseries
 % Compute barometric effect
@@ -205,7 +201,6 @@ figure
 plot(SumnerTS.DateTime, SumnerTS.WL,'r')
 hold on
 plot(HurunuiTide.DateTime,HurunuiTide.Final,'b')
-datetickzoom('x')
 legend('Sumner observed','Hurunui calculated')
 ylabel('Sea level [mLVD]')
 
@@ -214,8 +209,8 @@ WaveTS.Angle = angleDiff(WaveTS.DirDeg*pi/180, Config.OnshoreDir*pi/180);
 %WaveTS.LstPot = 
 
 %% Interpolate data onto same timesteps
-LagoonTS.Qin = interp1(HurunuiSH1.DateTime,...
-                       HurunuiSH1.Flow,...
+LagoonTS.Qin = interp1(RiverTS.DateTime,...
+                       RiverTS.Flow,...
                        LagoonTS.DateTime);
 LagoonTS.SeaLevel = interp1(HurunuiTide.DateTime,...
                             HurunuiTide.Final,...
@@ -246,10 +241,10 @@ ylabel('Flow [m^3/s]')
 legend('Inflow','Outflow')
 
 %% Save lagoon TS
-writetable(LagoonTS,'LagoonTS.csv')
+writetable(LagoonTS,'outputs\LagoonTS.csv')
 
 DailyLagoonTS = dailyStats(LagoonTS);
-writetable(DailyLagoonTS,'DailyLagoonTS.csv')
+writetable(DailyLagoonTS,'outputs\DailyLagoonTS.csv')
 
 %% Estimate Channel Dimensions
 

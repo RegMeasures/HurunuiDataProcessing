@@ -8,7 +8,7 @@ function [OutletQ, LagoonVol] = HindcastQ(Hypsometry,TS)
 %   3. Volume [m3]
 %
 % TS = table of observed timeseries data with columns:
-%   1. DateTime (increasing)
+%   1. DateTime (increasing order)
 %   2. WL = lagoon WL [m]
 %   3. Qin = Lagoon inflow rate [m/s]
 %
@@ -16,19 +16,17 @@ function [OutletQ, LagoonVol] = HindcastQ(Hypsometry,TS)
 %
 % CURRENTLY NO ALLOWANCE FOR SEEPAGE!!!!!!
 
-dT = (TS.DateTime(2:end)-TS.DateTime(1:end-1)) * 60*60*24;
-Tmid = (TS.DateTime(2:end)+TS.DateTime(1:end-1))/2;
+dT = (TS.DateTime(2:end)-TS.DateTime(1:end-1));
+Tmid = TS.DateTime(1:end-1)+dT/2;
 
 LagoonVol = interp1(Hypsometry.Elevation,Hypsometry.Volume,TS.WL,'spline');
 dLagoonVol = LagoonVol(2:end)-LagoonVol(1:end-1);
-dSdT = dLagoonVol./dT;
+dSdT = dLagoonVol./seconds(dT);
 TS.dSdT = [dSdT(1);...
            interp1(Tmid,dSdT,TS.DateTime(2:end-1));...
            dSdT(end)];
 
 OutletQ = TS.Qin - TS.dSdT;
-
-DateTime = (TS.DateTime(2:end)+TS.DateTime(1:end-1))/2;
 
 end
 

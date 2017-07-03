@@ -12,8 +12,9 @@ BaroEffect = -100*(BaroTS.Baro-1000)/(1025*9.81);
 BaroEffect = interp1(BaroTS.DateTime,BaroEffect,DateTime);
 
 % Do tidal analysis to generate predicted (tidal) TS
-Interval = (DateTime(2) - DateTime(1))*24;
-[~,~,~,PredictWL] =t_tide((ObservedWL - BaroEffect), 'interval',Interval);
+Interval = hours(DateTime(2) - DateTime(1));
+[~,~,~,PredictWL] =t_tide((ObservedWL - BaroEffect), ...
+                           'interval',Interval, 'error','wboot');
 
 % calc anomaly
 Anomaly = (ObservedWL - BaroEffect) - PredictWL;
