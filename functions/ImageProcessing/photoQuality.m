@@ -40,11 +40,26 @@ Brightness = nan(NoOfPhotos,1);
 
 %% Import old data if available
 if exist('PhotosPrevious','var');
+    % find matching images
     [~,IA,IB] = intersect(PhotosPrevious.FileName, ...
                           PhotoDataTable.FileName,'stable');
+    
+    % import quality data
     Sharpness(IB) = PhotosPrevious.Sharpness(IA);
     Contrast(IB) = PhotosPrevious.Contrast(IA);
     Brightness(IB) = PhotosPrevious.Brightness(IA);
+    
+    % import all other columns
+    VarNames = PhotosPrevious.Properties.VariableNames;
+    for Var=VarNames(8:end);
+        if isfloat(PhotosPrevious.(Var{1})) || ...
+                islogical(PhotosPrevious.(Var{1}))
+            PhotoDataTable.(Var{1}) = nan(size(PhotoDataTable,1),1);
+        elseif iscell(PhotosPrevious.(Var{1}))
+            PhotoDataTable.(Var{1}) = cell(size(PhotoDataTable,1),1);
+        end
+        PhotoDataTable.(Var{1})(IB) = PhotosPrevious.(Var{1})(IA);
+    end
     fprintf(['Imported %d quality metrics from matching photos in ', ...
              'database of %d previously processed photos.\n'], ...
             size(IA,1),size(PhotosPrevious.FileName,1));
@@ -54,29 +69,32 @@ end
 
 % start parrallel pool (if license available)
 if license('test','Distrib_Computing_Toolbox')
-    myPool = parpool();
+    if isempty(gcp('nocreate'))
+        numCores = feature('numcores');
+        parpool(numCores);
+    end
 else
     fprintf(['No license for Matlab parallel computing toolbox',...
              'available. Single-core processing only.\n'])
 end
 
+% process all photos which have not previously been processed
+NoToProcess = sum(isnan(Sharpness));
+
 % set up progress reporting as this can be slow if there are lots of photos
 fprintf('Calculating Quality Metrics.\nRequired time %s\nCurrent time  \n', ...
-        repmat('.',1,min(70,NoOfPhotos)));
-    
+        repmat('.',1,min(70,NoToProcess)));
+
+% pre-processing to avoid having to pass full PhotoDataFolder to all nodes
+FileNames = fullfile(PhotoFolder, ...
+                     PhotoDataTable.FileSubDir, ...
+                     PhotoDataTable.FileName);
 parfor PhotoNo = 1:NoOfPhotos
-        
-    % Display approx progress
-    if rand<(70/NoOfPhotos)
-        fprintf(1,'\b.\n'); % \b is backspace
-    end
     
     % Only process image if quality parameters are not already available
     if isnan(Sharpness(PhotoNo))
         % Load image
-        ImageRGB = imread(fullfile(PhotoFolder, ...
-                                   PhotoDataTable.FileSubDir{PhotoNo}, ...
-                                   [PhotoDataTable.FileName{PhotoNo},'.jpg']));
+        ImageRGB = imread([FileNames{PhotoNo},'.jpg']);
 
         % Convert to grayscale
         ImageGray = double(rgb2gray(ImageRGB));
@@ -92,6 +110,11 @@ parfor PhotoNo = 1:NoOfPhotos
 %              sprintf('Sharpness = %1.2f\nContrast = %1.2f\nBrightness = %1.2f', ...
 %                      Contrast(ImageNo), Brightness(ImageNo)),...
 %              'BackgroundColor', 'white');
+        
+        % Display approx progress
+        if rand<(70/NoToProcess)
+            fprintf(1,'\b.\n'); % \b is backspace
+        end
     end
     
 end

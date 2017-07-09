@@ -11,16 +11,16 @@ addpath('inputs')
 %% Input info
 
 % Main data drive/folder
-%DataFolder = 'C:\Projects\Hurunui';
+DataFolder = 'C:\Projects\Hurunui';
 %DataFolder = '\\engcad4\GISdump\Richard\';
-DataFolder = 'H:\Hapua\Individual_Hapua\Hurunui\';
+%DataFolder = 'H:\Hapua\Individual_Hapua\Hurunui\';
 %DataFolder = 'E:\Hurunui';
 
 % Photo directory containing all images
 PhotoFolder = '\PhotoRecord\ImageStore';
 
 % Processed Lagoon TS
-LagoonTsCsv = '\Matlab\OutletFlow\LagoonTS.csv';
+LagoonTsCsv = 'outputs\LagoonTS.csv';
 
 % % Wave data exported from Tideda
 % WaveCSV1 = '\TimeseriesData\WaveData1.csv';
@@ -52,6 +52,8 @@ AllPhotos = genPhotoDataTable(fullfile(DataFolder,PhotoFolder));
 [~ ,~ ,~ ,~ ,CaptureMins ,~ ] = datevec(AllPhotos.CaptureTime);
 Photos = AllPhotos(CaptureMins==30 | CaptureMins==0,:);
 
+clear AllPhotos
+
 %% Load previously calculated metrics to avoid duplication of effort
 PhotosPrevious = load('outputs\PhotoDatabase.mat');
 PhotosPrevious = PhotosPrevious.Photos;
@@ -66,11 +68,14 @@ Photos = photoQuality(fullfile(DataFolder,PhotoFolder),Photos,PhotosPrevious);
 Photos.QualityOk = Photos.Sharpness > SharpThresh & ...
                    Photos.Contrast > ContrastThresh & ...
                    Photos.Brightness > BrightThresh;
-               
+
+% tidy up
+clear PhotosPrevious
+
 % Save photo database as generating metrics takes a long time
 save('outputs\PhotoDatabase.mat','Photos')
  
-% load(fullfile(DataFolder,'\PhotoRecord\PhotoDatabase.mat'));
+% load('outputs\PhotoDatabase.mat');
  
 %% Sort images
 [TimeMatchedPhotos] = timeMatchPhotos(Photos);
@@ -78,7 +83,8 @@ save('outputs\PhotoDatabase.mat','Photos')
 %% Read in timeseries data
 
 % Read lagoon time series (already processed)
-LagoonTS = readtable(fullfile(DataFolder,LagoonTsCsv));
+LagoonTS = readtable(LagoonTsCsv);
+LagoonTS.DateTime = datetime(LagoonTS.DateTime);
 
 % % Read channel dimensions (already processed)
 % ChannelTS = readtable(fullfile(DataFolder,ChannelTsCsv));
@@ -98,13 +104,11 @@ TimeMatchedPhotos.LagoonLevel = interp1(LagoonTS.DateTime, ...
                                         LagoonTS.WL, ...
                                         TimeMatchedPhotos.UniqueTime, ...
                                         'linear', nan);
-    
-% Save TimeMatchedPhotos table
-save(fullfile(DataFolder,'\PhotoRecord\TimeMatchedPhotos.mat'),...
-     'TimeMatchedPhotos')
- 
-% load(fullfile(DataFolder,'\PhotoRecord\TimeMatchedPhotos.mat'));
- 
+
+%% Create timelapse
+animatePhotos('outputs/HurunuiTimeLapse', fullfile(DataFolder,PhotoFolder), Photos, ...
+              TimeMatchedPhotos, LagoonTS, [], [], 24, true);
+                                    
 %% Make a cut down list of times with quality images from both cameras
 
 % remove times with missing level data
@@ -134,7 +138,7 @@ ShortlistPhotos = ShortlistPhotos(~isnan(ShortlistPhotos.Cam1Photo) & ...
 StandardWL = 1.5;
 
 % Loop through days and identify high tide and low tide images
-PhotoDates = floor(ShortlistPhotos.UniqueTime);
+PhotoDates = dateshift(ShortlistPhotos.UniqueTime,'start','day');
 PhotoDays = unique(PhotoDates);
 
 HT = nan(size(PhotoDays));
@@ -158,12 +162,12 @@ HighTidePhotos = ShortlistPhotos(HT,:);
 LowTidePhotos = ShortlistPhotos(LT,:);
 StdTidePhotos = ShortlistPhotos(ST,:);
 
-save(fullfile(DataFolder,'\PhotoRecord\HighTidePhotos.mat'),...
-     'HighTidePhotos')
-save(fullfile(DataFolder,'\PhotoRecord\LowTidePhotos.mat'),...
-     'LowTidePhotos')
-save(fullfile(DataFolder,'\PhotoRecord\StdTidePhotos.mat'),...
-     'StdTidePhotos')
+save('outputs\HighTidePhotos.mat',...
+     'HighTidePhotos');
+save('outputs\LowTidePhotos.mat',...
+     'LowTidePhotos');
+save('outputs\StdTidePhotos.mat',...
+     'StdTidePhotos');
  
 clear PhotoDates PhotoDays HT LT ST TodaysPhotos
 
@@ -172,21 +176,19 @@ clear PhotoDates PhotoDays HT LT ST TodaysPhotos
 % load(fullfile(DataFolder,'\PhotoRecord\StdTidePhotos.mat'))
 
 %% Animate Lowtide and high tide images
-animatePhotos('DailyLowTide', fullfile(DataFolder,PhotoFolder), Photos, ...
-              LowTidePhotos, [], [], [], 2, true);
+animatePhotos('outputs\DailyLowTide', fullfile(DataFolder,PhotoFolder), Photos, ...
+              LowTidePhotos, LagoonTS, [], [], 2, true);
           
-animatePhotos('DailyHighTide', fullfile(DataFolder,PhotoFolder), Photos, ...
-              HighTidePhotos, [], [], [], 2, true);
+animatePhotos('outputs\DailyHighTide', fullfile(DataFolder,PhotoFolder), Photos, ...
+              HighTidePhotos, LagoonTS, [], [], 2, true);
           
-animatePhotos('DailyStdTide', fullfile(DataFolder,PhotoFolder), Photos, ...
-              StdTidePhotos, [], [], [], 2, true);
+animatePhotos('outputs\DailyStdTide', fullfile(DataFolder,PhotoFolder), Photos, ...
+              StdTidePhotos, LagoonTS, [], [], 2, true);
 
 %% Loop through images and extract waters edge
 
-NoOfDays = size(StdTidePhotos,1);
-
 % Create variables to hold outputs. 
-% first check if they exist in Photos table
+% (first check if they exist in Photos table)
 if ~ismember('Twist', Photos.Properties.VariableNames)
     Photos.Twist = cell(size(Photos.FileName));
 end
@@ -199,49 +201,64 @@ end
 % Cam2Photos = StdTidePhotos.Cam2Photo;
 % WL = StdTidePhotos.LagoonLevel;
 
-% Loop through all (shortlisted/quality) images
-Cam1Photos = ShortlistPhotos.Cam1Photo;
-Cam2Photos = ShortlistPhotos.Cam2Photo;
-WL = ShortlistPhotos.LagoonLevel;
 
-Photo1FileName = fullfile(DataFolder, PhotoFolder, ...
-                          Photos.FileSubDir(Cam1Photos), ...
-                          strcat(Photos.FileName(Cam1Photos), ...
-                                 '.jpg'));
-Photo2FileName = fullfile(DataFolder, PhotoFolder, ...
-                          Photos.FileSubDir(Cam2Photos), ...
-                          strcat(Photos.FileName(Cam2Photos), ...
-                                 '.jpg'));
-Twist1 = Photos.Twist(Cam1Photos);
-Twist2 = Photos.Twist(Cam2Photos);
-WetBdy1 = Photos.WetBdy(Cam1Photos);
-WetBdy2 = Photos.WetBdy(Cam2Photos);
-                             
-[Twist1, WetBdy1] = LagoonEdgePosition(Photo1FileName, ...
-                                       WL, Cam1, ...
-                                       FgBgMask1, SeedPixel1, ...
-                                       Twist1, WetBdy1);
-[Twist2, WetBdy2] = LagoonEdgePosition(Photo2FileName, ...
-                                       WL, Cam2, ...
-                                       FgBgMask2, SeedPixel2, ...
-                                       Twist1, WetBdy2); 
-                                       %NOTE this uses twist1 as an input
+% limit the number of timesteps processed at a time so that if I need to
+% break the process I can get out the results... Pareval might be better?
+IterationLimit = 70;
+NoToProcess = size(ShortlistPhotos,1);
 
-% Put variables into photos table
-Photos.Twist(Cam1Photos) = Twist1;
-Photos.Twist(Cam2Photos) = Twist2;
-Photos.WetBdy(Cam1Photos) = WetBdy1;
-Photos.WetBdy(Cam2Photos) = WetBdy2;
+for ii = [IterationLimit:IterationLimit:NoToProcess,NoToProcess];
+    % Loop through all (shortlisted/quality) images
+    ThisLoop = ii-(IterationLimit-1):1:ii;
+    Cam1Photos = ShortlistPhotos.Cam1Photo(ThisLoop);
+    Cam2Photos = ShortlistPhotos.Cam2Photo(ThisLoop);
+    WL = ShortlistPhotos.LagoonLevel(ThisLoop);
 
+    Photo1FileName = fullfile(DataFolder, PhotoFolder, ...
+                              Photos.FileSubDir(Cam1Photos), ...
+                              strcat(Photos.FileName(Cam1Photos), ...
+                                     '.jpg'));
+    Photo2FileName = fullfile(DataFolder, PhotoFolder, ...
+                              Photos.FileSubDir(Cam2Photos), ...
+                              strcat(Photos.FileName(Cam2Photos), ...
+                                     '.jpg'));
+    Twist1 = Photos.Twist(Cam1Photos);
+    Twist2 = Photos.Twist(Cam2Photos);
+    WetBdy1 = Photos.WetBdy(Cam1Photos);
+    WetBdy2 = Photos.WetBdy(Cam2Photos);
+
+    [Twist1, WetBdy1] = LagoonEdgePosition(Photo1FileName, ...
+                                           WL, Cam1, ...
+                                           FgBgMask1, SeedPixel1, ...
+                                           Twist1, WetBdy1);
+%     [Twist2, WetBdy2] = LagoonEdgePosition(Photo2FileName, ...
+%                                            WL, Cam2, ...
+%                                            FgBgMask2, SeedPixel2, ...
+%                                            Twist1, WetBdy2); 
+%                                            %NOTE this uses twist1 as an input
+
+    % Put variables into photos table
+    Photos.Twist(Cam1Photos) = Twist1;
+    Photos.Twist(Cam2Photos) = Twist2;
+    Photos.WetBdy(Cam1Photos) = WetBdy1;
+    Photos.WetBdy(Cam2Photos) = WetBdy2;
+    
+    % Report progress
+    fprintf('Extracting waters edge. %i out of %i completed\n', ...
+            ii, NoToProcess)
+end
+    
 % Clean up
 clear Cam1Photos Cam2Photos Photo1FileName Photo2FileName Twist1 Twist2 ...
-    WetBdy1 WetBdy2
+    WetBdy1 WetBdy2 IterationLimit ThisLoop ii
 
 % Save
-save(fullfile(DataFolder,'\PhotoRecord\PhotoDatabase.mat'),...
-     'Photos')
+save('outputs\PhotoDatabase.mat','Photos')
  
-    
+%% Extract lagoon area
+
+%polyarea
+
 %% Extract cross-section barrier backshore position
 
 %polyxpoly

@@ -13,7 +13,7 @@ function [WetMask, WetBdy] = WetDry2(RGBImage, FgBgMask, SeedPixel, Twist, DiagP
 %      SeedPixel =
 %      Twist     = 
 %      DiagPlot  = Optional boolean: True  = output diagnostic plots
-%                                   False = no plots (default)
+%                                    False = no plots (default)
 %
 %   Outputs:
 %      WetMask   = classified (1/0) image identifying wet (lagoon) area of
@@ -59,7 +59,7 @@ EdgeDist = DilationPx+1-min(EdgeDist,DilationPx+1);
 Watersheds = watershed(EdgeDist);
 WetLabel = Watersheds(SeedPixel(2),SeedPixel(1));
 WetMask  = imdilate(Watersheds == WetLabel,strel('disk',1));
-WetBdySeperate = bwboundaries(WetMask);
+WetBdySeperate = bwboundaries(WetMask,'noholes');
 WetBdy = WetBdySeperate{1};
 for BdyNo = 2:size(WetBdySeperate,1)
     WetBdy = [WetBdy; nan(1,2); WetBdySeperate{BdyNo}];
