@@ -1,4 +1,4 @@
-function [WetMask, WetBdy] = WetDry2(RGBImage, FgBgMask, SeedPixel, Twist, DiagPlot)
+function [WetMask, WetBdyPx] = WetDry2(RGBImage, FgBgMask, SeedPixel, Twist, DiagPlot)
 % WETDRY   wet area image classification
 %   Uses canny edge detection and dilation/watershed erosion to identify
 %   wet area of lagoon in image.
@@ -60,13 +60,10 @@ Watersheds = watershed(EdgeDist);
 WetLabel = Watersheds(SeedPixel(2),SeedPixel(1));
 WetMask  = imdilate(Watersheds == WetLabel,strel('disk',1));
 WetBdySeperate = bwboundaries(WetMask,'noholes');
-WetBdy = WetBdySeperate{1};
+WetBdyPx = WetBdySeperate{1};
 for BdyNo = 2:size(WetBdySeperate,1)
-    WetBdy = [WetBdy; nan(1,2); WetBdySeperate{BdyNo}];
+    WetBdyPx = [WetBdyPx; nan(1,2); WetBdySeperate{BdyNo}];
 end
-
-%% Remove backshore part of WetBdy polygon to leave polyline along barrier
-[WetBdy] = cleanWetBdy(WetBdy);
 
 %% Plot
 if DiagPlot
@@ -89,7 +86,7 @@ if DiagPlot
 %     showMaskAsOverlay(1, Edge1, 'k', [], false)
     hold on
     plot(SeedPixel(1),SeedPixel(2),'ro')
-    plot(WetBdy(:,2), WetBdy(:,1), 'r-')
+    plot(WetBdyPx(:,2), WetBdyPx(:,1), 'r-')
 end
 
 end

@@ -47,6 +47,9 @@ SeedPixel2 = [1334, 950];
 
 % Transect lines
 TransectShp = '100mTransects_NZTM';
+Transects = m_shaperead(TransectShp);
+Transects = Transects.ncst(23:39);
+Transects = cellfun(@flipud, Transects, 'UniformOutput', false);
 
 %% Find available images and extract key information
 AllPhotos = genPhotoDataTable(fullfile(DataFolder,PhotoFolder));
@@ -204,14 +207,12 @@ end
 % Cam2Photos = StdTidePhotos.Cam2Photo;
 % WL = StdTidePhotos.LagoonLevel;
 
-
 % limit the number of timesteps processed at a time so that if I need to
-% break the process I can get out the results... Pareval might be better?
+% break the process I can get the results out... Pareval might be better?
 IterationLimit = 70;
 NoToProcess = size(ShortlistPhotos,1);
 
-for ii = [IterationLimit:IterationLimit:NoToProcess,NoToProcess];
-    % Loop through all (shortlisted/quality) images
+for ii = [IterationLimit:IterationLimit:NoToProcess,NoToProcess]
     ThisLoop = ii-(IterationLimit-1):1:ii;
     Cam1Photos = ShortlistPhotos.Cam1Photo(ThisLoop);
     Cam2Photos = ShortlistPhotos.Cam2Photo(ThisLoop);
@@ -234,11 +235,11 @@ for ii = [IterationLimit:IterationLimit:NoToProcess,NoToProcess];
                                            WL, Cam1, ...
                                            FgBgMask1, SeedPixel1, ...
                                            Twist1, WetBdy1);
-%     [Twist2, WetBdy2] = LagoonEdgePosition(Photo2FileName, ...
-%                                            WL, Cam2, ...
-%                                            FgBgMask2, SeedPixel2, ...
-%                                            Twist1, WetBdy2); 
-%                                            %NOTE this uses twist1 as an input
+    [Twist2, WetBdy2] = LagoonEdgePosition(Photo2FileName, ...
+                                           WL, Cam2, ...
+                                           FgBgMask2, SeedPixel2, ...
+                                           [Twist(1),-Twist(2)], WetBdy2); 
+                                           %NOTE this uses twist1 as an input
 
     % Put variables into photos table
     Photos.Twist(Cam1Photos) = Twist1;
@@ -263,20 +264,22 @@ save('outputs\PhotoDatabase.mat','Photos')
 %polyarea
 
 %% Extract cross-section barrier backshore position
-
-WetBdy = cleanWetBdy(Photos.WetBdy{721});
-WetBdy = [WetBdy; nan(1,2); ...
-          cleanWetBdy(Photos.WetBdy{159})];
-plot(WetBdy(:,1),WetBdy(:,2),'k')
-axis equal
-hold on
-plot(Photos.WetBdy{721}(:,1),Photos.WetBdy{721}(:,2),'k')
-Transects = m_shaperead(TransectShp);
-for ii = 23:39
-    plot(Transects.ncst{ii}(:,1),Transects.ncst{ii}(:,2),'g')
-    [xi,yi] = polyintersect(Photos.WetBdy{159}(:,1),Photos.WetBdy{159}(:,2),...
-                            Transects.ncst{ii}(:,1),Transects.ncst{ii}(:,2));
-    plot(xi,yi,'rx')
+ShortlistPhotos.Offsets = nan(size(ShortlistPhotos,1),size(Transects,1));
+Printii = 10;
+for ii = 1:size(ShortlistPhotos,1)
+    WetBdy = [Photos.WetBdy{ShortlistPhotos.Cam1Photo(ii)}; ...
+              nan(1,2); ...
+              Photos.WetBdy{ShortlistPhotos.Cam2Photo(ii)}];
+    if ~isempty(WetBdy)
+        ShortlistPhotos.Offsets(ii,:) = measureLagoonWidth(WetBdy,Transects)';
+    end
+    % report progress
+    if ii >= Printii
+        fprintf('Completed calculating offsets for %i of %i timesteps\n', ...
+                ii,size(ShortlistPhotos,1))
+        Printii = Printii + 100;
+    end
 end
+clear ii Printii
 
 

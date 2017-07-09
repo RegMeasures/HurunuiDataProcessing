@@ -1,7 +1,7 @@
 % Test/calibrate image projection and wet edge ID against surveyed WE
 
-addpath('functions')
-addpath('data')
+addpath(genpath('functions'))
+addpath(genpath('inputs'))
 
 %% Specify camera settings
 load('CamSettings')
@@ -73,6 +73,12 @@ WL = mean(LagoonWE.Elevation);
     ProjectToMap(Cam1, WL, [], WetBdy1(:,1), WetBdy1(:,2));
 [BdyEasting2, BdyNorthing2] = ...
     ProjectToMap(Cam2, WL, [], WetBdy2(:,1), WetBdy2(:,2));
+WetBdy1 = [BdyEasting1, BdyNorthing1];
+WetBdy2 = [BdyEasting2, BdyNorthing2];
+
+% Remove backshore part of WetBdy polygon to leave polyline along barrier
+WetBdy1 = cleanWetBdy(WetBdy1);
+WetBdy2 = cleanWetBdy(WetBdy2);
 
 % display projected image as surface
 plotProjected(TestImage1,[0,0],WL,Cam1,FgBgMask1);
@@ -81,14 +87,21 @@ plotProjected(TestImage2,[0,0],WL,Cam2,FgBgMask2);
 
 % overlay surveyed waters edge
 hold on
-plot(LagoonWE.Easting, LagoonWE.Northing, 'r-x')
-plot(MouthWE.Easting, MouthWE.Northing, 'g-x')
+plot(LagoonWE.Easting, LagoonWE.Northing, 'c-x')
+plot(MouthWE.Easting, MouthWE.Northing, 'm-x')
 hold off
 
-% add wet bdy to map
+% calculate offsets along transects and add them and WetBdy to plot
+WetBdy = [WetBdy1; ...
+          nan(1,2); ...
+          WetBdy2];
+
+Transects = m_shaperead('100mTransects_NZTM');
+Transects = Transects.ncst(23:39);
+Transects = cellfun(@flipud, Transects, 'UniformOutput', false);
+
 hold on
-plot(BdyEasting1,BdyNorthing1,'k-')
-plot(BdyEasting2,BdyNorthing2,'k-')
+[Offsets] = measureLagoonWidth(WetBdy,Transects,true);
 hold off
 
 % zoom to survey data
@@ -121,32 +134,44 @@ GCPS = cell2mat(GCPS.ncst);
 Twist = MeasureTwist1(TestImage1);
 
 % find wet edges
-[WetMask1, WetBdy1] = WetDry2(TestImage1, FgBgMask1, [1628, 1013], Twist, true);
-[WetMask2, WetBdy2] = WetDry2(TestImage2, FgBgMask2, [1334, 950], [Twist(1),-Twist(2)], false);
+[WetMask1, WetBdyPx1] = WetDry2(TestImage1, FgBgMask1, [1628, 1013], Twist, true);
+[WetMask2, WetBdyPx2] = WetDry2(TestImage2, FgBgMask2, [1334, 950], [Twist(1),-Twist(2)], false);
 
 % convert WetBdys to easting northing
 [BdyEasting1, BdyNorthing1] = ...
-    ProjectToMap(Cam1, WL, [Twist], WetBdy1(:,1), WetBdy1(:,2));
+    ProjectToMap(Cam1, WL, [Twist], WetBdyPx1(:,1), WetBdyPx1(:,2));
 [BdyEasting2, BdyNorthing2] = ...
-    ProjectToMap(Cam2, WL, [Twist(1),-Twist(2)], WetBdy2(:,1), WetBdy2(:,2));
+    ProjectToMap(Cam2, WL, [Twist(1),-Twist(2)], WetBdyPx2(:,1), WetBdyPx2(:,2));
+WetBdy1 = [BdyEasting1, BdyNorthing1];
+WetBdy2 = [BdyEasting2, BdyNorthing2];
+
+% Remove backshore part of WetBdy polygon to leave polyline along barrier
+WetBdy1 = cleanWetBdy(WetBdy1);
+WetBdy2 = cleanWetBdy(WetBdy2);
 
 % display projected image as surface
 figure
 plotProjected(TestImage1,Twist,WL,Cam1,FgBgMask1);
 hold on
 plotProjected(TestImage2,[Twist(1),-Twist(2)],WL,Cam2,FgBgMask2);
+hold off
 
 % overlay SFM waters edge and Ground Control
 hold on
 plot(WatersEdge(:,1), WatersEdge(:,2), 'b-')
-plot(GCPS(:,1), GCPS(:,2), 'rx')
+plot(GCPS(:,1), GCPS(:,2), 'cx')
 hold off
 
-% add wet bdy to map
+% calculate offsets along transects and add them and WetBdy to plot
+WetBdy = [WetBdy1; ...
+          nan(1,2); ...
+          WetBdy2];
+
+Transects = m_shaperead('100mTransects_NZTM');
+Transects = Transects.ncst(23:39);
+Transects = cellfun(@flipud, Transects, 'UniformOutput', false);
+
 hold on
-plot(BdyEasting1,BdyNorthing1,'k-')
-plot(BdyEasting2,BdyNorthing2,'k-')
+[Offsets] = measureLagoonWidth(WetBdy,Transects,true);
 hold off
 
-% export wet bdy as shapefile
-%shapewrite
