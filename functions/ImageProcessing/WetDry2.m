@@ -65,11 +65,8 @@ for BdyNo = 2:size(WetBdySeperate,1)
     WetBdy = [WetBdy; nan(1,2); WetBdySeperate{BdyNo}];
 end
 
-%% extract wet area and boundary
-% [Bdys,Labels] = bwboundaries(~Edge4,4);
-% WetLabel = Labels(WetXY(2),WetXY(1));
-% WetBdy = fliplr(Bdys{WetLabel});
-% WetMask = (Labels == WetLabel);
+%% Remove backshore part of WetBdy polygon to leave polyline along barrier
+[WetBdy] = cleanWetBdy(WetBdy);
 
 %% Plot
 if DiagPlot

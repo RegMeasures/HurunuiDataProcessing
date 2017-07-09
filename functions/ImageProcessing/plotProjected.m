@@ -1,6 +1,7 @@
 function [AX] = plotProjected(RGBimage,Twist,WL,Cam,FgBgMask,AX)
-%UNTITLED2 Summary of this function goes here
-%   Detailed explanation goes here
+%Color surf plot of projected camera image
+%   AX = plotProjected(RGBimage,Twist,WL,Cam,FgBgMask,AX)
+%   AX input and output are optional.
 
 % calculate pixel positions
 [PixelX, PixelY] = ProjectToMap(Cam, WL, Twist, [], []);

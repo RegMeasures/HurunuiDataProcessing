@@ -6,7 +6,7 @@
 % - photoQuality
 
 addpath(genpath('functions'))
-addpath('inputs')
+addpath(genpath('inputs'))
 
 %% Input info
 
@@ -44,6 +44,9 @@ load('CamSettings')
 % Seed pixels for water ID
 SeedPixel1 = [1628, 1013];
 SeedPixel2 = [1334, 950];
+
+% Transect lines
+TransectShp = '100mTransects_NZTM';
 
 %% Find available images and extract key information
 AllPhotos = genPhotoDataTable(fullfile(DataFolder,PhotoFolder));
@@ -261,6 +264,19 @@ save('outputs\PhotoDatabase.mat','Photos')
 
 %% Extract cross-section barrier backshore position
 
-%polyxpoly
+WetBdy = cleanWetBdy(Photos.WetBdy{721});
+WetBdy = [WetBdy; nan(1,2); ...
+          cleanWetBdy(Photos.WetBdy{159})];
+plot(WetBdy(:,1),WetBdy(:,2),'k')
+axis equal
+hold on
+plot(Photos.WetBdy{721}(:,1),Photos.WetBdy{721}(:,2),'k')
+Transects = m_shaperead(TransectShp);
+for ii = 23:39
+    plot(Transects.ncst{ii}(:,1),Transects.ncst{ii}(:,2),'g')
+    [xi,yi] = polyintersect(Photos.WetBdy{159}(:,1),Photos.WetBdy{159}(:,2),...
+                            Transects.ncst{ii}(:,1),Transects.ncst{ii}(:,2));
+    plot(xi,yi,'rx')
+end
 
 

@@ -57,7 +57,7 @@ parfor PhotoNo = 1:NoOfPhotos
         PhotoRgb = imread(PhotoFileName{PhotoNo});
 
         % calculate twist if required (only works for cam1 at present!)
-        if isempty(Twist{PhotoNo});
+        if isempty(Twist{PhotoNo})
             Twist{PhotoNo} = MeasureTwist1(PhotoRgb);
         end
 
