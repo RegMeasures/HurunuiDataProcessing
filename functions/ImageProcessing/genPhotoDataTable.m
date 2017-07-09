@@ -18,10 +18,14 @@ PhotoFileList = rdir(fullfile(PhotoFolder,'\**\*Hurunui*.jpg'), '', true);
 % Extract key data into matrices
 [FileSubDir,FileName] = cellfun(@fileparts,{PhotoFileList.name}','UniformOutput',false);
 CameraNo = cellfun(@(x) str2num(x(end-21)), FileName);
-CaptureTime = cellfun(@(x) datenum(x(end-19:end-3), 'yy-mm-dd_HH-MM-SS'), FileName);
+CaptureTime = cellfun(@(x) x(end-19:end-3), ...
+                      FileName, 'uniformoutput', false);
+CaptureTime = datetime(CaptureTime,'InputFormat', 'yy-MM-dd_HH-mm-ss');
+% TIME ADJUSTMENT NEEDED HERE - SEE ISSUE #1
 
 % correct time field to nearest 15min interval
-CaptureTime = round(CaptureTime*4*24)/(4*24);
+CaptureTime = datetime(round(datenum(CaptureTime)*4*24)/(4*24), ...
+                       'ConvertFrom', 'datenum');
 
 % % read metadata to extract resolution
 % NoOfPhotos = size(PhotoFileList,1);

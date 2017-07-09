@@ -14,18 +14,25 @@ function animatePhotos(VideoName, ...
 %                     PhotoFolder (see genPhotoDatabase and photoQuality)
 %       TimeMatchedPhotos = Table refencing photos associated with each
 %                     timestep of video (see timeMatchPhotos)
-%       LagoonTs    = (optional)
-%       WaveTs      = (optional)
-%       ChannelTs   = (optional)
+%       LagoonTs    = Lagoon timeseries data 
+%                     (optional, if not supplied no data is plotted)
+%       WaveTs      = Wave timeseries data 
+%                     (optional, if not supplied no data is plotted)
+%       ChannelTs   = Channel timeseries data 
+%                     (optional, if not supplied no data is plotted)
 %       Framerate   = frames per second for outupt video 
 %                     (optional, default=10)
 %       DateOnly    = boolean: true  = display date only
 %                              false = display date and time
 %
-%   Note: Size locked for 1944x2592 but shouldn't be a problems as
+%   Notes: 
+%     - Size locked for 1944x2592 but shouldn't be a problems as
 %       this is the camera high res size
 %
 %   See also: GENPHOTODATABASE, PHOTOQUALITY, TIMEMATCHPHOTOS
+
+% FUTURE CHANGE: The latest versions of Matlab (2016b?) allow datetime 
+% values to be passed directly to xlim etc - this would tidy up a lot.
 
 
 %% Set defaults and plot options
@@ -67,7 +74,6 @@ if PlotFlow
     hold on
     FlowFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.Qin(end), 'r.', 'MarkerSize',15);
     hold off
-    datetick(FlowFig.AxesH,'x','dd-mmm','keeplimits')
     ylabel('Flow at SH1 [m^3/s]')
     ylim([0,200])
     FlowFig.LabelH = text(70,130, ...
@@ -87,7 +93,6 @@ if PlotLevel
     hold on
     LevelFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.WL(end), 'r.', 'MarkerSize',15);
     hold off
-    %datetick(LevelFig.AxesH,'x','keeplimits')
     ylabel('Lagoon level [m]')
     ylim([0.5,3.5])
 else
@@ -103,7 +108,6 @@ if PlotWave
     hold on
     WaveFig.PointH = plot(WaveTs.Date(end), WaveTs.HsM(end), 'r.', 'MarkerSize',15);
     hold off
-    %datetick(LevelFig.AxesH,'x','keeplimits')
     ylabel('Sig. wave height [m]')
     ylim([0,6])
 else
@@ -119,7 +123,6 @@ if PlotChannel
     hold on
     ChannelFig.PointH = plot(ChannelTs.meanT(end), ChannelTs.L(end), 'r.', 'MarkerSize',15);
     hold off
-    %datetick(LevelFig.AxesH,'x','keeplimits')
     ylabel('Outlet channel length [m]')
     ylim([0,500])
 else
@@ -181,10 +184,11 @@ for TimeNo = 1:1:NoOfFrames
     if PlotFlow
         CurrentQ = interp1(LagoonTs.DateTime, LagoonTs.Qin, ...
                            TimeMatchedPhotos.UniqueTime(TimeNo));
-        xlim(FlowFig.AxesH,[TimeMatchedPhotos.UniqueTime(TimeNo)-21 TimeMatchedPhotos.UniqueTime(TimeNo)+7])
+        xlim(FlowFig.AxesH, ...
+             datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
         datetick(FlowFig.AxesH,'x','ddmmm','keeplimits')
         set(FlowFig.PointH, ...
-            'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
+            'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
             'YData', CurrentQ)
         set(FlowFig.LabelH, ...
             'String', sprintf('%0.1fm^3/s', CurrentQ))
@@ -195,10 +199,11 @@ for TimeNo = 1:1:NoOfFrames
     if PlotLevel
         CurrentWL = interp1(LagoonTs.DateTime, LagoonTs.WL, ...
                             TimeMatchedPhotos.UniqueTime(TimeNo));
-        xlim(LevelFig.AxesH,[TimeMatchedPhotos.UniqueTime(TimeNo)-21 TimeMatchedPhotos.UniqueTime(TimeNo)+7])
+        xlim(LevelFig.AxesH, ...
+             datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
         datetick(LevelFig.AxesH,'x','ddmmm','keeplimits')
         set(LevelFig.PointH, ...
-            'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
+            'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
             'YData', CurrentWL)
         LevelPlot = getframe(LevelFig.FigureH);
     end
@@ -207,10 +212,11 @@ for TimeNo = 1:1:NoOfFrames
     if PlotWave
         CurrentHs = interp1(WaveTs.Date, WaveTs.HsM, ...
                             TimeMatchedPhotos.UniqueTime(TimeNo));
-        xlim(WaveFig.AxesH,[TimeMatchedPhotos.UniqueTime(TimeNo)-21 TimeMatchedPhotos.UniqueTime(TimeNo)+7])
+        xlim(WaveFig.AxesH, ...
+             datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
         datetick(WaveFig.AxesH,'x','ddmmm','keeplimits')
         set(WaveFig.PointH, ...
-            'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
+            'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
             'YData', CurrentHs)
         WavePlot = getframe(WaveFig.FigureH);
     end
@@ -219,10 +225,11 @@ for TimeNo = 1:1:NoOfFrames
     if PlotChannel
         CurrentChannelLength = interp1(ChannelTs.meanT, ChannelTs.L, ...
                             TimeMatchedPhotos.UniqueTime(TimeNo));
-        xlim(ChannelFig.AxesH,[TimeMatchedPhotos.UniqueTime(TimeNo)-21 TimeMatchedPhotos.UniqueTime(TimeNo)+7])
+        xlim(ChannelFig.AxesH, ...
+             datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
         datetick(ChannelFig.AxesH,'x','ddmmm','keeplimits')
         set(ChannelFig.PointH, ...
-            'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
+            'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
             'YData', CurrentChannelLength)
         ChannelPlot = getframe(ChannelFig.FigureH);
     end
