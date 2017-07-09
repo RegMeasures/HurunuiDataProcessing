@@ -83,10 +83,15 @@ dHSV = dH .* dS .* dV;
 
 % primary search
 H_EdgeIni = find(dHSV > H_dHSVthresh, 1);
-while isempty(H_EdgeIni)
+while isempty(H_EdgeIni) 
     %warning('no cliff edge identified in MeasureTwist1, halving H_dHSVthresh')
     H_dHSVthresh = H_dHSVthresh/2;
     H_EdgeIni = find(dHSV > H_dHSVthresh, 1);
+    if sum(dHSV) == 0
+        Twist = nan(1,2);
+        Edge = nan(1,2);
+        return
+    end
 end
 
 % find peak near this location

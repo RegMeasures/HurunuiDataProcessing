@@ -34,7 +34,8 @@ end
 
 % start parralel pool
 if isempty(gcp('nocreate'))
-    parpool
+    numCores = feature('numcores');
+    parpool(numCores);
 end
 
 % set up progress reporting as this loop can be slow
@@ -49,7 +50,7 @@ parfor PhotoNo = 1:NoOfPhotos
         fprintf(1,'\b.\n'); % \b is backspace
     end
     
-    % only load image and process if it hasn;t been done before
+    % only load image and process if it hasn't been done before
     if isempty(WetBdy{PhotoNo})
 
         % Load image
@@ -61,9 +62,11 @@ parfor PhotoNo = 1:NoOfPhotos
         end
 
         % find wet edges and project
-        [~, WetBdyPx] = WetDry2(PhotoRgb, FgBgMask, SeedPixel, Twist{PhotoNo});
-        [BdyEast, BdyNorth] = ProjectToMap(Cam, WL(PhotoNo), Twist{PhotoNo}, WetBdyPx(:,1), WetBdyPx(:,2));
-        WetBdy{PhotoNo} = [BdyEast, BdyNorth];
+        if ~isnan(Twist{PhotoNo}(1))
+            [~, WetBdyPx] = WetDry2(PhotoRgb, FgBgMask, SeedPixel, Twist{PhotoNo});
+            [BdyEast, BdyNorth] = ProjectToMap(Cam, WL(PhotoNo), Twist{PhotoNo}, WetBdyPx(:,1), WetBdyPx(:,2));
+            WetBdy{PhotoNo} = [BdyEast, BdyNorth];
+        end
     end
 end
 
