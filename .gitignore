@@ -1,1 +1,8 @@
+# Ignore temporary autosaved matlab files
 *.asv
+
+# Ignore video output files (large file sizes!)
+*.mp4
+
+# Ignore mat files in outputs
+outputs/*.mat
