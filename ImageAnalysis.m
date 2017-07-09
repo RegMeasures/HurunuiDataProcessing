@@ -171,9 +171,9 @@ save('outputs\StdTidePhotos.mat',...
  
 clear PhotoDates PhotoDays HT LT ST TodaysPhotos
 
-% load(fullfile(DataFolder,'\PhotoRecord\LowTidePhotos.mat'))
-% load(fullfile(DataFolder,'\PhotoRecord\HighTidePhotos.mat'))
-% load(fullfile(DataFolder,'\PhotoRecord\StdTidePhotos.mat'))
+% load(outputs\LowTidePhotos.mat')
+% load(outputs\HighTidePhotos.mat')
+% load(outputs\StdTidePhotos.mat')
 
 %% Animate Lowtide and high tide images
 animatePhotos('outputs\DailyLowTide', fullfile(DataFolder,PhotoFolder), Photos, ...

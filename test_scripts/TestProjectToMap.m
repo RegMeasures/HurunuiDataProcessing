@@ -64,16 +64,6 @@ LagoonWE = SurveyPts(3:108,:);
 MouthWE = SurveyPts(117:131,:);
 WL = mean(LagoonWE.Elevation);
 
-% calculate distorted and projected pixel positions
-[Cam1.PixelEasting, Cam1.PixelNorthing] = ...
-              ProjectToMap(Cam1, WL, [], [], []);%, TestImage1);
-[Cam2.PixelEasting, Cam2.PixelNorthing] = ...
-              ProjectToMap(Cam2, WL, [], [], []);%, TestImage2);
-
-% Mask image areas not required for plotting
-Cam1.PixelEasting(FgBgMask1) = nan;
-Cam1.PixelNorthing(FgBgMask1) = nan;
-
 % find wet edges
 [WetMask1, WetBdy1] = WetDry2(TestImage1, FgBgMask1, [1628, 1013], [], false);
 [WetMask2, WetBdy2] = WetDry2(TestImage2, FgBgMask2, [1334, 950], [], false);
@@ -85,18 +75,9 @@ Cam1.PixelNorthing(FgBgMask1) = nan;
     ProjectToMap(Cam2, WL, [], WetBdy2(:,1), WetBdy2(:,2));
 
 % display projected image as surface
-figure
-x = Cam1.PixelEasting;
-y = Cam1.PixelNorthing;
-z = zeros(size(x));
-surf(x,y,z,TestImage1,'EdgeColor','none','FaceColor','texturemap')
-view(2)
-axis equal
+plotProjected(TestImage1,[0,0],WL,Cam1,FgBgMask1);
 hold on
-x = Cam2.PixelEasting;
-y = Cam2.PixelNorthing;
-z = zeros(size(x));
-surf(x,y,z,TestImage2,'EdgeColor','none','FaceColor','texturemap')
+plotProjected(TestImage2,[0,0],WL,Cam2,FgBgMask2);
 
 % overlay surveyed waters edge
 hold on
@@ -139,41 +120,21 @@ GCPS = cell2mat(GCPS.ncst);
 % Measure pole twist
 Twist = MeasureTwist1(TestImage1);
 
-% calculate distorted and projected pixel positions
-[Cam1.PixelEasting, Cam1.PixelNorthing] = ...
-              ProjectToMap(Cam1, WL, Twist, [], []);%, TestImage1);
-[Cam2.PixelEasting, Cam2.PixelNorthing] = ...
-              ProjectToMap(Cam2, WL, Twist, [], []);%, TestImage2);
-          
-% Mask image areas not required for plotting
-Cam1.PixelEasting(FgBgMask1) = nan;
-Cam1.PixelNorthing(FgBgMask1) = nan;
-Cam2.PixelEasting(FgBgMask2) = nan;
-Cam2.PixelNorthing(FgBgMask2) = nan;
-
 % find wet edges
 [WetMask1, WetBdy1] = WetDry2(TestImage1, FgBgMask1, [1628, 1013], Twist, true);
 [WetMask2, WetBdy2] = WetDry2(TestImage2, FgBgMask2, [1334, 950], [Twist(1),-Twist(2)], false);
 
 % convert WetBdys to easting northing
 [BdyEasting1, BdyNorthing1] = ...
-    ProjectToMap(Cam1, WL, Twist, WetBdy1(:,1), WetBdy1(:,2));
+    ProjectToMap(Cam1, WL, [Twist], WetBdy1(:,1), WetBdy1(:,2));
 [BdyEasting2, BdyNorthing2] = ...
     ProjectToMap(Cam2, WL, [Twist(1),-Twist(2)], WetBdy2(:,1), WetBdy2(:,2));
 
 % display projected image as surface
 figure
-x = Cam1.PixelEasting;
-y = Cam1.PixelNorthing;
-z = zeros(size(x));
-surf(x,y,z,TestImage1,'EdgeColor','none','FaceColor','texturemap')
-view(2)
-axis equal
+plotProjected(TestImage1,Twist,WL,Cam1,FgBgMask1);
 hold on
-x = Cam2.PixelEasting;
-y = Cam2.PixelNorthing;
-z = zeros(size(x));
-surf(x,y,z,TestImage2,'EdgeColor','none','FaceColor','texturemap')
+plotProjected(TestImage2,[Twist(1),-Twist(2)],WL,Cam2,FgBgMask2);
 
 % overlay SFM waters edge and Ground Control
 hold on
