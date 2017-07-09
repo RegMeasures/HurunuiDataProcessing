@@ -265,7 +265,7 @@ save('outputs\PhotoDatabase.mat','Photos')
 
 %% Extract cross-section barrier backshore position
 ShortlistPhotos.Offsets = nan(size(ShortlistPhotos,1),size(Transects,1));
-Printii = 10;
+Printii = 100;
 for ii = 1:size(ShortlistPhotos,1)
     WetBdy = [Photos.WetBdy{ShortlistPhotos.Cam1Photo(ii)}; ...
               nan(1,2); ...
@@ -281,5 +281,6 @@ for ii = 1:size(ShortlistPhotos,1)
     end
 end
 clear ii Printii
+save('outputs\ShortlistPhotos.mat','ShortlistPhotos')
 
 
