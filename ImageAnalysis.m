@@ -45,6 +45,9 @@ load('CamSettings')
 SeedPixel1 = [1628, 1013];
 SeedPixel2 = [1334, 950];
 
+% Set standard WL for selection of consistent images
+StandardWL = 1.5;
+
 % Transect lines
 TransectShp = '100mTransects_NZTM';
 Transects = m_shaperead(TransectShp);
@@ -140,9 +143,6 @@ ShortlistPhotos = ShortlistPhotos(~isnan(ShortlistPhotos.Cam1Photo) & ...
 
 %% Make a list of daily high tide and low tide images
 
-% Set standard WL for selection of consistent images
-StandardWL = 1.5;
-
 % Loop through days and identify high tide and low tide images
 PhotoDates = dateshift(ShortlistPhotos.UniqueTime,'start','day');
 PhotoDays = unique(PhotoDates);
@@ -227,7 +227,7 @@ for ii = [IterationLimit:IterationLimit:NoToProcess,NoToProcess]
                               strcat(Photos.FileName(Cam2Photos), ...
                                      '.jpg'));
     Twist1 = Photos.Twist(Cam1Photos);
-    Twist2 = Photos.Twist(Cam2Photos);
+    %Twist2 = Photos.Twist(Cam2Photos);
     WetBdy1 = Photos.WetBdy(Cam1Photos);
     WetBdy2 = Photos.WetBdy(Cam2Photos);
 
@@ -235,10 +235,11 @@ for ii = [IterationLimit:IterationLimit:NoToProcess,NoToProcess]
                                            WL, Cam1, ...
                                            FgBgMask1, SeedPixel1, ...
                                            Twist1, WetBdy1);
+    Twist2 = cellfun(@(x) [x(1),-x(2)], Twist1, 'UniformOutput', false);
     [Twist2, WetBdy2] = LagoonEdgePosition(Photo2FileName, ...
                                            WL, Cam2, ...
                                            FgBgMask2, SeedPixel2, ...
-                                           [Twist(1),-Twist(2)], WetBdy2); 
+                                           Twist2, WetBdy2); 
                                            %NOTE this uses twist1 as an input
 
     % Put variables into photos table
@@ -253,8 +254,8 @@ for ii = [IterationLimit:IterationLimit:NoToProcess,NoToProcess]
 end
     
 % Clean up
-clear Cam1Photos Cam2Photos Photo1FileName Photo2FileName Twist1 Twist2 ...
-    WetBdy1 WetBdy2 IterationLimit ThisLoop ii
+clear Cam1Photos Cam2Photos WL Photo1FileName Photo2FileName Twist1 Twist2 ...
+    WetBdy1 WetBdy2 IterationLimit NoToProcess ThisLoop ii
 
 % Save
 save('outputs\PhotoDatabase.mat','Photos')
@@ -264,23 +265,26 @@ save('outputs\PhotoDatabase.mat','Photos')
 %polyarea
 
 %% Extract cross-section barrier backshore position
-ShortlistPhotos.Offsets = nan(size(ShortlistPhotos,1),size(Transects,1));
-Printii = 100;
-for ii = 1:size(ShortlistPhotos,1)
-    WetBdy = [Photos.WetBdy{ShortlistPhotos.Cam1Photo(ii)}; ...
-              nan(1,2); ...
-              Photos.WetBdy{ShortlistPhotos.Cam2Photo(ii)}];
-    if ~isempty(WetBdy)
-        ShortlistPhotos.Offsets(ii,:) = measureLagoonWidth(WetBdy,Transects)';
-    end
-    % report progress
-    if ii >= Printii
-        fprintf('Completed calculating offsets for %i of %i timesteps\n', ...
-                ii,size(ShortlistPhotos,1))
-        Printii = Printii + 100;
-    end
+% only process timesteps with WetBdy for both cameras
+
+TimesToProcess = find(~cellfun(@isempty,Photos.WetBdy(ShortlistPhotos.Cam1Photo)) & ...
+                      ~cellfun(@isempty,Photos.WetBdy(ShortlistPhotos.Cam2Photo)));
+
+IterationLimit = 70;
+NoToProcess = size(TimesToProcess,1);
+
+for ii = [IterationLimit:IterationLimit:NoToProcess,NoToProcess]
+    ThisLoop = ii-(IterationLimit-1):1:ii;
+    PhotosToProcess = ShortlistPhotos(TimesToProcess(ThisLoop),:);
+
+    [ShortlistPhotos.Offsets(TimesToProcess(ThisLoop))] = ...
+        measureLagoonWidth(PhotosToProcess, Photos, Transects, false);
+        
+    % Report progress
+    fprintf('Calculating offsets. %i out of %i completed\n', ...
+            ii, NoToProcess)
 end
-clear ii Printii
-save('outputs\ShortlistPhotos.mat','ShortlistPhotos')
+
+clear TimesToProcess IterationLimit NoToProcess ii ThisLoop PhotosToProcess
 
 
