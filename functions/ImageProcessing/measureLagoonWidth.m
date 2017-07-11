@@ -4,11 +4,6 @@ function [Offsets] = measureLagoonWidth(ShortlistPhotos, Photos, ...
 %   [Offsets] = measureLagoonWidth(ShortlistPhotos, Photos, ...
 %                                  Transects, DiagPlot)
 
-% create variable to hold outputs if not already present
-if ~any(strcmp('Offsets', ShortlistPhotos.Properties.VariableNames))
-    ShortlistPhotos.Offsets = nan(size(ShortlistPhotos,1),size(Transects,1));
-end
-
 % Setup broadcast variables
 WetBdy = cellfun(@(a,b) [a;nan(1,2);b], ...
                  Photos.WetBdy(ShortlistPhotos.Cam1Photo), ...
@@ -34,6 +29,9 @@ for ii = 1:NoToProcess
     end
 end
 
+% Basic QA
+Offsets(Offsets > 300) = nan;
+
 end
 
 %% Local functions
@@ -50,12 +48,16 @@ Offsets = nan(size(Transects));
 % Find offset to lagoon edge for each transect
 for TranNo = 1:size(Transects)
     
-    % AS THE TRANSECT IS A STRAIGHT LINE THERE IS PROBABALY A QUICKER WAY 
-    % OF DOING THIS BIT
     % intersect transect with WetBdy
-    [Xint,Yint] = polyintersect(WetBdy(:,1), WetBdy(:,2), ...
-                                Transects{TranNo}(:,1), ...
-                                Transects{TranNo}(:,2));
+%     [Xint,Yint] = polyintersect(WetBdy(:,1), WetBdy(:,2), ...
+%                                 Transects{TranNo}(:,1), ...
+%                                 Transects{TranNo}(:,2));
+
+    M = (Transects{TranNo}(2,2) - Transects{TranNo}(1,2)) / ...
+        (Transects{TranNo}(2,1) - Transects{TranNo}(1,1));
+    C = Transects{TranNo}(1,2) - M * Transects{TranNo}(1,1);
+    [Xint,Yint] = lineCrossings (WetBdy(:,1), WetBdy(:,2), M, C);
+    
     % if they cross then calc offset to outermost crossing
     if ~isempty(Xint)
         Offsets(TranNo) = max(sqrt((Xint - Transects{TranNo}(1,1)).^2 + ...
@@ -83,6 +85,37 @@ if DiagPlot
         plot(plotX,plotY,'rx')
     end
 end
+
+end
+
+function [Xint, Yint] = lineCrossings (LineX, LineY, M, C)
+% efficient calculation of intersection points as polyintersect is too slow
+
+% ID crossing segments
+% crossings are where we go from one side of the line to the other
+LineSide = sign(LineY - (M * LineX + C));
+Crossings = find(LineSide(1:end-1) .* LineSide(2:end) == -1);
+
+% ID intersection points
+NoOfCrossings = size(Crossings,1);
+Xint = nan(NoOfCrossings,1);
+Yint = Xint;
+for ii = 1:NoOfCrossings;
+    M2 = (LineY(Crossings(ii)+1) - LineY(Crossings(ii))) / ...
+         (LineX(Crossings(ii)+1) - LineX(Crossings(ii)));
+    if isinf(M2)
+        Xint(ii) = LineX(Crossings(ii));
+    else
+        C2 = LineY(Crossings(ii)) - M2 * LineX(Crossings(ii));
+        Xint(ii) = (C2-C)/(M-M2);
+    end
+    Yint(ii) = M * Xint(ii) + C;
+end
+
+% plot(LineX,LineY,'k-')
+% hold on
+% axis equal
+% plot([min(LineX),max(LineX)], [min(LineX)*M+C,max(LineX)*M+C], 'b-')
 
 end
 

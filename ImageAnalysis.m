@@ -141,56 +141,6 @@ end
 ShortlistPhotos = ShortlistPhotos(~isnan(ShortlistPhotos.Cam1Photo) & ...
                                   ~isnan(ShortlistPhotos.Cam2Photo), :);
 
-%% Make a list of daily high tide and low tide images
-
-% Loop through days and identify high tide and low tide images
-PhotoDates = dateshift(ShortlistPhotos.UniqueTime,'start','day');
-PhotoDays = unique(PhotoDates);
-
-HT = nan(size(PhotoDays));
-LT = nan(size(PhotoDays));
-
-for ii = 1:size(PhotoDays)
-    TodaysPhotos = PhotoDates == PhotoDays(ii);
-    
-    % ID high tide image
-    [~,HT(ii)] = max(ShortlistPhotos.LagoonLevel +100 * TodaysPhotos);
-
-    % ID low tide image
-    [~,LT(ii)] = min(ShortlistPhotos.LagoonLevel -100 * TodaysPhotos);
-    
-    % ID standard tide image
-    [~,ST(ii)] = min(abs(ShortlistPhotos.LagoonLevel - StandardWL) + ...
-                     999 * ~TodaysPhotos);
-end
-
-HighTidePhotos = ShortlistPhotos(HT,:);
-LowTidePhotos = ShortlistPhotos(LT,:);
-StdTidePhotos = ShortlistPhotos(ST,:);
-
-save('outputs\HighTidePhotos.mat',...
-     'HighTidePhotos');
-save('outputs\LowTidePhotos.mat',...
-     'LowTidePhotos');
-save('outputs\StdTidePhotos.mat',...
-     'StdTidePhotos');
- 
-clear PhotoDates PhotoDays HT LT ST TodaysPhotos
-
-% load(outputs\LowTidePhotos.mat')
-% load(outputs\HighTidePhotos.mat')
-% load(outputs\StdTidePhotos.mat')
-
-%% Animate Lowtide and high tide images
-animatePhotos('outputs\DailyLowTide', fullfile(DataFolder,PhotoFolder), Photos, ...
-              LowTidePhotos, LagoonTS, [], [], 2, true);
-          
-animatePhotos('outputs\DailyHighTide', fullfile(DataFolder,PhotoFolder), Photos, ...
-              HighTidePhotos, LagoonTS, [], [], 2, true);
-          
-animatePhotos('outputs\DailyStdTide', fullfile(DataFolder,PhotoFolder), Photos, ...
-              StdTidePhotos, LagoonTS, [], [], 2, true);
-
 %% Loop through images and extract waters edge
 
 % Create variables to hold outputs. 
@@ -265,26 +215,73 @@ save('outputs\PhotoDatabase.mat','Photos')
 %polyarea
 
 %% Extract cross-section barrier backshore position
+
 % only process timesteps with WetBdy for both cameras
+TimesToProcess = ~cellfun(@isempty,Photos.WetBdy(ShortlistPhotos.Cam1Photo)) & ...
+                 ~cellfun(@isempty,Photos.WetBdy(ShortlistPhotos.Cam2Photo));
+PhotosToProcess = ShortlistPhotos(TimesToProcess,:);
 
-TimesToProcess = find(~cellfun(@isempty,Photos.WetBdy(ShortlistPhotos.Cam1Photo)) & ...
-                      ~cellfun(@isempty,Photos.WetBdy(ShortlistPhotos.Cam2Photo)));
-
-IterationLimit = 70;
-NoToProcess = size(TimesToProcess,1);
-
-for ii = [IterationLimit:IterationLimit:NoToProcess,NoToProcess]
-    ThisLoop = ii-(IterationLimit-1):1:ii;
-    PhotosToProcess = ShortlistPhotos(TimesToProcess(ThisLoop),:);
-
-    [ShortlistPhotos.Offsets(TimesToProcess(ThisLoop))] = ...
-        measureLagoonWidth(PhotosToProcess, Photos, Transects, false);
-        
-    % Report progress
-    fprintf('Calculating offsets. %i out of %i completed\n', ...
-            ii, NoToProcess)
+% create column in ShortlistPhotos table to hold outputs if not already present
+if ~any(strcmp('Offsets', ShortlistPhotos.Properties.VariableNames))
+    ShortlistPhotos.Offsets = nan(size(ShortlistPhotos,1),size(Transects,1));
 end
 
-clear TimesToProcess IterationLimit NoToProcess ii ThisLoop PhotosToProcess
+% Calculate the offsets for all times and transects
+[ShortlistPhotos.Offsets(TimesToProcess,:)] = ...
+    measureLagoonWidth(PhotosToProcess, Photos, Transects, false);
 
+% tidy up
+clear TimesToProcess PhotosToProcess
 
+%% plot the offset TS
+plot(ShortlistPhotos.UniqueTime,ShortlistPhotos.Offsets(:,7),'x')
+
+%% Make a list of daily high tide and low tide images
+
+% Loop through days and identify high tide and low tide images
+PhotoDates = dateshift(ShortlistPhotos.UniqueTime,'start','day');
+PhotoDays = unique(PhotoDates);
+
+HT = nan(size(PhotoDays));
+LT = nan(size(PhotoDays));
+
+for ii = 1:size(PhotoDays)
+    TodaysPhotos = PhotoDates == PhotoDays(ii);
+    
+    % ID high tide image
+    [~,HT(ii)] = max(ShortlistPhotos.LagoonLevel +100 * TodaysPhotos);
+
+    % ID low tide image
+    [~,LT(ii)] = min(ShortlistPhotos.LagoonLevel -100 * TodaysPhotos);
+    
+    % ID standard tide image
+    [~,ST(ii)] = min(abs(ShortlistPhotos.LagoonLevel - StandardWL) + ...
+                     999 * ~TodaysPhotos);
+end
+
+HighTidePhotos = ShortlistPhotos(HT,:);
+LowTidePhotos = ShortlistPhotos(LT,:);
+StdTidePhotos = ShortlistPhotos(ST,:);
+
+save('outputs\HighTidePhotos.mat',...
+     'HighTidePhotos');
+save('outputs\LowTidePhotos.mat',...
+     'LowTidePhotos');
+save('outputs\StdTidePhotos.mat',...
+     'StdTidePhotos');
+ 
+clear PhotoDates PhotoDays HT LT ST TodaysPhotos
+
+% load(outputs\LowTidePhotos.mat')
+% load(outputs\HighTidePhotos.mat')
+% load(outputs\StdTidePhotos.mat')
+
+%% Animate Lowtide and high tide images
+animatePhotos('outputs\DailyLowTide', fullfile(DataFolder,PhotoFolder), Photos, ...
+              LowTidePhotos, LagoonTS, [], [], 2, true);
+          
+animatePhotos('outputs\DailyHighTide', fullfile(DataFolder,PhotoFolder), Photos, ...
+              HighTidePhotos, LagoonTS, [], [], 2, true);
+          
+animatePhotos('outputs\DailyStdTide', fullfile(DataFolder,PhotoFolder), Photos, ...
+              StdTidePhotos, LagoonTS, [], [], 2, true);
