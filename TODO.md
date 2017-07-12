@@ -4,6 +4,9 @@ To do:
       updating.
 - [ ] make some WetBdy QA and discard the crap!
 - [ ] plot offset timeseries
-- [ ] update wave timeseries
-- [ ] update Sumner sea level timeseries
+- [x] update wave timeseries
+- [ ] update Sumner sea level (and baro) timeseries
+- [ ] update Hurunui baro timeseries
+- [ ] QA plot to check for gaps in photo record
+- [ ] Wave data QA plot in TimeseiesAnalysis
       
