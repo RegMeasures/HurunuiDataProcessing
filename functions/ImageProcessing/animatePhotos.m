@@ -1,6 +1,6 @@
 function animatePhotos(VideoName, ...
                        PhotoFolder, PhotoDatabase, TimeMatchedPhotos, ...
-                       LagoonTs, WaveTs, ChannelTs, Framerate, DateOnly)
+                       LagoonTs, Framerate, DateOnly)
 % ANIMATEPHOTOS   record timelapse movie of both cams + TS data plots
 %   
 %   ANIMATEPHOTOS(VideoName, ...
@@ -15,11 +15,9 @@ function animatePhotos(VideoName, ...
 %       TimeMatchedPhotos = Table refencing photos associated with each
 %                     timestep of video (see timeMatchPhotos)
 %       LagoonTs    = Lagoon timeseries data 
-%                     (optional, if not supplied no data is plotted)
-%       WaveTs      = Wave timeseries data 
-%                     (optional, if not supplied no data is plotted)
-%       ChannelTs   = Channel timeseries data 
-%                     (optional, if not supplied no data is plotted)
+%                     (optional, if not supplied no data is plotted, if 
+%                     supplied but no wave or channel data then only level 
+%                     and flow are plotted)
 %       Framerate   = frames per second for outupt video 
 %                     (optional, default=10)
 %       DateOnly    = boolean: true  = display date only
@@ -31,30 +29,21 @@ function animatePhotos(VideoName, ...
 %
 %   See also: GENPHOTODATABASE, PHOTOQUALITY, TIMEMATCHPHOTOS
 
-% FUTURE CHANGE: The latest versions of Matlab (2016b?) allow datetime 
-% values to be passed directly to xlim etc - this would tidy up a lot.
-
 
 %% Set defaults and plot options
-
-if ~exist('LagoonTs','var') || isempty(LagoonTs)
-    PlotLevel = false;
-    PlotFlow = false;
-else
+PlotLevel = false;
+PlotFlow = false;
+PlotWave = false;
+PlotChannel = false;
+if exist('LagoonTs','var') || isempty(LagoonTs)
     PlotLevel = true;
     PlotFlow = true;
-end
-
-if ~exist('WaveTs','var') || isempty(WaveTs)
-    PlotWave = false;
-else
-    PlotWave = true;
-end
-
-if ~exist('ChannelTs','var') || isempty(ChannelTs)
-    PlotChannel = false;
-else
-    PlotChannel = true;
+    if ismember('WaveHs', LagoonTs.Properties.VariableNames)
+        PlotWave = true;
+    end
+    if ismember('ChannelL', LagoonTs.Properties.VariableNames)
+        PlotChannel = true;
+    end
 end
 
 if ~exist('Framerate','var') || isempty(Framerate)
@@ -103,10 +92,10 @@ end
 if PlotWave
     WaveFig.FigureH = figure('Position',[100, 700, 648, 200],...
                              'Name','Significant wave height');
-    WaveFig.LineH = plot(WaveTs.Date, WaveTs.HsM, 'b-');
+    WaveFig.LineH = plot(LagoonTs.DateTime, LagoonTs.WaveHs, 'b-');
     WaveFig.AxesH = gca;
     hold on
-    WaveFig.PointH = plot(WaveTs.Date(end), WaveTs.HsM(end), 'r.', 'MarkerSize',15);
+    WaveFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.WaveHs(end), 'r.', 'MarkerSize',15);
     hold off
     ylabel('Sig. wave height [m]')
     ylim([0,6])
@@ -117,11 +106,11 @@ end
 %% generate channel plot ready to insert into movie
 if PlotChannel
     ChannelFig.FigureH = figure('Position',[100, 400, 648, 200],...
-                             'Name','Outlet Channel');
-    ChannelFig.LineH = plot(ChannelTs.meanT, ChannelTs.L, 'b-');
+                                'Name','Outlet Channel');
+    ChannelFig.LineH = plot(LagoonTs.DateTime, LagoonTs.ChannelL, 'b-');
     ChannelFig.AxesH = gca;
     hold on
-    ChannelFig.PointH = plot(ChannelTs.meanT(end), ChannelTs.L(end), 'r.', 'MarkerSize',15);
+    ChannelFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.ChannelL(end), 'r.', 'MarkerSize',15);
     hold off
     ylabel('Outlet channel length [m]')
     ylim([0,500])
@@ -166,10 +155,13 @@ for TimeNo = 1:1:NoOfFrames
     frame = [Cam2Image, zeros(1944, 4, 3), Cam1Image];
 
     % crop the image fractionally
-    frame = imcrop(frame, [3,25,5183,1895]);
+    %frame = imcrop(frame, [3,25,5183,1895]);
+    frame = frame(25:1920,3:5186,:);
 
     % reduce the resolution of the image
-    frame = imresize(frame,0.25);
+    % frame = imresize(frame,0.25);
+    frame = frame(2:4:end-2,2:4:end-2,:);
+    
 
     % insert timestamp
     if DateOnly
@@ -184,8 +176,13 @@ for TimeNo = 1:1:NoOfFrames
     if PlotFlow
         CurrentQ = interp1(LagoonTs.DateTime, LagoonTs.Qin, ...
                            TimeMatchedPhotos.UniqueTime(TimeNo));
-        xlim(FlowFig.AxesH, ...
-             datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
+        if verLessThan('Matlab','9.1')
+            xlim(FlowFig.AxesH, ...
+                 datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
+        else
+            xlim(FlowFig.AxesH, ...
+                 TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
+        end
         datetick(FlowFig.AxesH,'x','ddmmm','keeplimits')
         set(FlowFig.PointH, ...
             'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
@@ -199,8 +196,13 @@ for TimeNo = 1:1:NoOfFrames
     if PlotLevel
         CurrentWL = interp1(LagoonTs.DateTime, LagoonTs.WL, ...
                             TimeMatchedPhotos.UniqueTime(TimeNo));
-        xlim(LevelFig.AxesH, ...
-             datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
+        if verLessThan('Matlab','9.1')
+            xlim(LevelFig.AxesH, ...
+                 datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
+        else
+            xlim(LevelFig.AxesH, ...
+                 TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
+        end
         datetick(LevelFig.AxesH,'x','ddmmm','keeplimits')
         set(LevelFig.PointH, ...
             'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
@@ -210,10 +212,15 @@ for TimeNo = 1:1:NoOfFrames
 
     % prep significant wave height plot
     if PlotWave
-        CurrentHs = interp1(WaveTs.Date, WaveTs.HsM, ...
+        CurrentHs = interp1(LagoonTs.DateTime, LagoonTs.WaveHs, ...
                             TimeMatchedPhotos.UniqueTime(TimeNo));
-        xlim(WaveFig.AxesH, ...
-             datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
+        if verLessThan('Matlab','9.1')
+            xlim(WaveFig.AxesH, ...
+                 datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
+        else
+            xlim(WaveFig.AxesH, ...
+                 TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
+        end
         datetick(WaveFig.AxesH,'x','ddmmm','keeplimits')
         set(WaveFig.PointH, ...
             'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
@@ -223,10 +230,15 @@ for TimeNo = 1:1:NoOfFrames
 
     % prep channel plot
     if PlotChannel
-        CurrentChannelLength = interp1(ChannelTs.meanT, ChannelTs.L, ...
-                            TimeMatchedPhotos.UniqueTime(TimeNo));
-        xlim(ChannelFig.AxesH, ...
-             datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
+        CurrentChannelLength = interp1(LagoonTs.DateTime, LagoonTs.ChannelL, ...
+                                       TimeMatchedPhotos.UniqueTime(TimeNo));
+        if verLessThan('Matlab','9.1')
+            xlim(ChannelFig.AxesH, ...
+                 datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
+        else
+            xlim(ChannelFig.AxesH, ...
+                 datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
+        end
         datetick(ChannelFig.AxesH,'x','ddmmm','keeplimits')
         set(ChannelFig.PointH, ...
             'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
