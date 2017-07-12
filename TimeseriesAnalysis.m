@@ -1,18 +1,13 @@
-% Hindcast outlet flow time series
-% Uses HindcastQ.m
+%% Analyse Hurunui Hapua monitoring timeseries data
 
-% add associated functions
+%% Setup
+
+% Add required directories (and subdirectories)
 addpath(genpath('functions'))
 addpath(genpath('inputs'))
 
-% Add T_Tide toolbox
-% Used for tidal harmonics analysis.
-% More information at <https://www.eoas.ubc.ca/~rich/#T_Tide>
-addpath functions\t_tide_v1.3beta\
-
-%% Get input parameters
-% Stored in settings file
-Config = TimeseriesConfig;
+% Read input parameters
+Config = HurunuiAnalysisConfig;
 
 %% Load Data and apply datum corrections etc.
 
