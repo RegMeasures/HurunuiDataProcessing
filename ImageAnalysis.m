@@ -82,7 +82,7 @@ Photos.QualityOk = Photos.Sharpness > SharpThresh & ...
 clear PhotosPrevious
 
 % Save photo database as generating metrics takes a long time
-save('outputs\PhotoDatabase.mat','Photos')
+save('outputs\PhotoDatabase.mat','Photos','-v7.3')
  
 % load('outputs\PhotoDatabase.mat');
  
@@ -208,8 +208,9 @@ clear Cam1Photos Cam2Photos WL Photo1FileName Photo2FileName Twist1 Twist2 ...
     WetBdy1 WetBdy2 IterationLimit NoToProcess ThisLoop ii
 
 % Save
-save('outputs\PhotoDatabase.mat','Photos')
+save('outputs\PhotoDatabase.mat','Photos','-v7.3')
  
+
 %% Extract lagoon area
 
 %polyarea
