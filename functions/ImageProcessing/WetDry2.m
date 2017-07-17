@@ -18,7 +18,7 @@ function [WetMask, WetBdyPx] = WetDry2(RGBImage, FgBgMask, SeedPixel, Twist, Dia
 %   Outputs:
 %      WetMask   = classified (1/0) image identifying wet (lagoon) area of
 %                  image
-%      WetBdy    = coordinates of line around edge of identified wet area
+%      WetBdyPx  = pixel-coordinates of line around edge of identified wet area
 %                  (matrix size Nx2)
 %
 %   See also: EDGE, BWDIST, WATERSHED, IMDILATE, BWBOUNDARIES, 
