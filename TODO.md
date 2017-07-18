@@ -14,3 +14,4 @@ To do:
 - [ ] fix measureTwist for Feb-March 2017 where X twist goes out of range
 - [ ] handle multiple returns when looking for offsets
 - [ ] measure mouth position alongshore
+- [ ] output plots to pdf

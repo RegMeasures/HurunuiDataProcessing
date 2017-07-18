@@ -67,7 +67,7 @@ if DiagPlot
     plot(WetBdy(:,1),WetBdy(:,2),'k')
     axis equal
     hold on
-    for TranNo = 1:size(Transects)
+    for TranNo = 1:size(Transects,1)
     
         plot(Transects{TranNo}(:,1),Transects{TranNo}(:,2),'g--')
         plot(Transects{TranNo}(1,1),Transects{TranNo}(1,2),'gx')
