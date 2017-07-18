@@ -18,9 +18,13 @@ NoOfPhotos = size(Position,1);
 Proportion = nan(NoOfPhotos,1);
 
 for ii = 1:NoOfPhotos
-    ThisGroupPos = Position(max(1, ii-floor(WindowSize/2)):min(end, ii+floor(WindowSize/2)),:);
-    SeperationDist = sqrt(sum((ThisGroupPos - repmat(Position(ii,:), size(ThisGroupPos,1),1)).^2,2));
-    Proportion(ii) = (sum(SeperationDist<ThresholdDist)-1) / (sum(~isnan(SeperationDist))-1);
+    if any(isnan(Position(ii,:)))
+        Proportion(ii) = 0;
+    else
+        ThisGroupPos = Position(max(1, ii-floor(WindowSize/2)):min(end, ii+floor(WindowSize/2)),:);
+        SeperationDist = sqrt(sum((ThisGroupPos - repmat(Position(ii,:), size(ThisGroupPos,1),1)).^2,2));
+        Proportion(ii) = (sum(SeperationDist<ThresholdDist)-1) / (sum(~isnan(SeperationDist))-1);
+    end
 end
 
 end

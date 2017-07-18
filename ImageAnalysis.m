@@ -14,6 +14,9 @@ addpath(genpath('inputs'))
 % Read input parameters
 Config = HurunuiAnalysisConfig;
 
+% get screensize for plot setups
+ScrSz = get(groot, 'ScreenSize');
+
 %% Find available images and extract key information
 AllPhotos = genPhotoDataTable(fullfile(Config.DataFolder,Config.PhotoFolder));
 
@@ -189,6 +192,11 @@ ylabel('Twist (pixels)')
 
 clear WindowSize PixelThreshold PropDistLT
 
+%% simple QA on WetBdy results
+WetBdySize = cellfun(@(x) size(x,1), ShortlistPhotos.WetBdy);
+ShortlistPhotos.WetBdyOK = WetBdySize>1000;
+clear WetBdySize
+
 %% Extract cross-section barrier backshore position
 
 % create column in ShortlistPhotos table to hold outputs if not already present
@@ -198,7 +206,7 @@ if ~any(strcmp('Offsets', ShortlistPhotos.Properties.VariableNames))
 end
 
 % only process timesteps which pass quality checks
-TimesToProcess = ShortlistPhotos.TwistOK;
+TimesToProcess = ShortlistPhotos.TwistOK & ShortlistPhotos.WetBdyOK;
 
 % Calculate the offsets for all times and transects
 [ShortlistPhotos.Offsets(TimesToProcess,:)] = ...
@@ -207,8 +215,33 @@ TimesToProcess = ShortlistPhotos.TwistOK;
 % tidy up
 clear TimesToProcess
 
-%% plot the offset TS
-plot(ShortlistPhotos.UniqueTime, ShortlistPhotos.Offsets, 'x')
+%% QA on Offsets
+
+% calculate proportion of surrounding points within threshold tolerance
+ShortlistPhotos.OffsetOK = nan(size(ShortlistPhotos.Offsets));
+OffsetOK = false(size(ShortlistPhotos.Offsets));
+WindowSize = 200;
+OffsetThreshold = 15;
+PropThreshold = 0.6;
+for TransectNo = 1:size(ShortlistPhotos.Offsets,2)
+    ProportionOK = propDistLT(ShortlistPhotos.Offsets(:,TransectNo), ...
+                              WindowSize, OffsetThreshold);
+
+    OffsetOK(:,TransectNo) = ProportionOK > PropThreshold;
+end
+ShortlistPhotos.OffsetOK(OffsetOK) = ShortlistPhotos.Offsets(OffsetOK);
+
+clear WindowSize OffsetThreshold PropThreshold ProportionOK OffsetOK
+
+%% plot the filtered Offset time series
+for TransectNo = 1:size(ShortlistPhotos.Offsets,2);
+    figure('Position', [1+10*(TransectNo-1), ScrSz(4)/2-10*(TransectNo-1), ScrSz(3), 300]);
+    plot(ShortlistPhotos.UniqueTime, ShortlistPhotos.Offsets(:,TransectNo), 'rx', ...
+         ShortlistPhotos.UniqueTime, ShortlistPhotos.OffsetOK(:,TransectNo), 'bx')
+    title(sprintf('Transect %i',TransectNo))
+    ylabel('Offset to barrier backshore (m)')
+end
+clear TransectNo
 
 %% Make a list of daily high tide and low tide images
 
@@ -249,6 +282,11 @@ clear PhotoDates UniquePhotoDates HT LT ST TodaysPhotos
 % load(outputs\LowTidePhotos.mat')
 % load(outputs\HighTidePhotos.mat')
 % load(outputs\StdTidePhotos.mat')
+
+%% Plot offsets for std tide
+figure('Position', [1, ScrSz(4)/2, ScrSz(3), 300]);
+plot(ShortlistPhotos.UniqueTime, ShortlistPhotos.OffsetOK, 'x')
+ylabel('Offset to barrier backshore (m)')
 
 %% Animate Lowtide and high tide images
 animatePhotos('outputs\DailyLowTide', ...
