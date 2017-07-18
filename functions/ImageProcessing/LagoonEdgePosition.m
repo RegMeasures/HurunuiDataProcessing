@@ -24,11 +24,14 @@ NoOfPhotos = size(PhotoFileName,1);
 
 % Create variables to hold outputs (if they have not been supplied)
 if ~exist('Twist','var') || isempty(Twist)
-    Twist = cell(NoOfPhotos,1);
+    Twist = nan(NoOfPhotos,2);
 end
 if ~exist('WetBdy','var') || isempty(WetBdy)
     WetBdy = cell(NoOfPhotos,1);
 end
+
+% Twist is handled as a cell array within this process
+CellTwist = mat2cell(Twist,ones(NoOfPhotos,1));
 
 %% Loop through days
 
@@ -57,18 +60,21 @@ parfor PhotoNo = 1:NoOfPhotos
         PhotoRgb = imread(PhotoFileName{PhotoNo});
 
         % calculate twist if required (only works for cam1 at present!)
-        if isempty(Twist{PhotoNo})
-            Twist{PhotoNo} = MeasureTwist1(PhotoRgb);
+        if any(isnan(CellTwist{PhotoNo}))
+            CellTwist{PhotoNo} = MeasureTwist1(PhotoRgb);
         end
 
-        % find wet edges and project
-        if ~isnan(Twist{PhotoNo}(1))
-            [~, WetBdyPx] = WetDry2(PhotoRgb, FgBgMask, SeedPixel, Twist{PhotoNo});
-            [BdyEast, BdyNorth] = ProjectToMap(Cam, WL(PhotoNo), Twist{PhotoNo}, WetBdyPx(:,1), WetBdyPx(:,2));
+        % find wet edges, project, and clean
+        if ~isnan(CellTwist{PhotoNo}(1))
+            [~, WetBdyPx] = WetDry2(PhotoRgb, FgBgMask, SeedPixel, CellTwist{PhotoNo});
+            [BdyEast, BdyNorth] = ProjectToMap(Cam, WL(PhotoNo), CellTwist{PhotoNo}, WetBdyPx(:,1), WetBdyPx(:,2));
             WetBdy{PhotoNo} = [BdyEast, BdyNorth];
+            [WetBdy{PhotoNo}] = cleanWetBdy(WetBdy{PhotoNo})
         end
     end
 end
+
+Twist = cell2mat(CellTwist);
 
 end
 

@@ -93,27 +93,26 @@ ShortlistPhotos = ShortlistPhotos(~isnan(ShortlistPhotos.Cam1Photo) & ...
 
 %% Loop through images and extract waters edge
 
-% Create variables to hold outputs. 
-% (first check if they exist in Photos table)
-if ~ismember('Twist', Photos.Properties.VariableNames)
-    Photos.Twist = cell(size(Photos.FileName));
-end
-if ~ismember('WetBdy', Photos.Properties.VariableNames)
-    Photos.WetBdy = cell(size(Photos.FileName));
-end
+NoToProcess = size(ShortlistPhotos,1);
 
-% Loop through specific images only
-% Cam1Photos = StdTidePhotos.Cam1Photo;
-% Cam2Photos = StdTidePhotos.Cam2Photo;
-% WL = StdTidePhotos.LagoonLevel;
+% Create variables to hold outputs. 
+% (first check if they exist in ShortlistPhotos table)
+if ~ismember('Twist', ShortlistPhotos.Properties.VariableNames)
+    ShortlistPhotos.Twist = nan(NoToProcess,2);
+end
+if ~ismember('WetBdy', ShortlistPhotos.Properties.VariableNames)
+    ShortlistPhotos.WetBdy = cell(NoToProcess,1);
+end
 
 % limit the number of timesteps processed at a time so that if I need to
 % break the process I can get the results out... Pareval might be better?
 IterationLimit = 70;
-NoToProcess = size(ShortlistPhotos,1);
 
-for ii = [IterationLimit:IterationLimit:NoToProcess,NoToProcess]
-    ThisLoop = ii-(IterationLimit-1):1:ii;
+ii = 1;
+while ii <= NoToProcess
+    ThisLoop = ii : min(ii+IterationLimit-1, NoToProcess);
+    ii = ThisLoop(end) + 1;
+    
     Cam1Photos = ShortlistPhotos.Cam1Photo(ThisLoop);
     Cam2Photos = ShortlistPhotos.Cam2Photo(ThisLoop);
     WL = ShortlistPhotos.LagoonLevel(ThisLoop);
@@ -124,33 +123,35 @@ for ii = [IterationLimit:IterationLimit:NoToProcess,NoToProcess]
     Photo2FileName = fullfile(Config.DataFolder, Config.PhotoFolder, ...
                               Photos.FileSubDir(Cam2Photos), ...
                               strcat(Photos.FileName(Cam2Photos), '.jpg'));
-    Twist1 = Photos.Twist(Cam1Photos);
-    %Twist2 = Photos.Twist(Cam2Photos);
-    Twist2 = cellfun(@(x) [x(1),-x(2)], Twist1, 'UniformOutput', false);
-    WetBdy1 = Photos.WetBdy(Cam1Photos);
-    WetBdy2 = Photos.WetBdy(Cam2Photos);
-
+    Twist1 = ShortlistPhotos.Twist(ThisLoop,:);
+    Twist2 = [Twist1(:,1),Twist1(:,2)];
+    WetBdy1 = ShortlistPhotos.WetBdy(ThisLoop);
+    WetBdy2 = ShortlistPhotos.WetBdy(ThisLoop);
+    
+    fprintf('Camera1: ')
     [Twist1, WetBdy1] = LagoonEdgePosition(Photo1FileName, ...
                                            WL, Config.Cam1, ...
                                            Config.FgBgMask1, ...
                                            Config.SeedPixel1, ...
                                            Twist1, WetBdy1);
     
-    [Twist2, WetBdy2] = LagoonEdgePosition(Photo2FileName, ...
+    fprintf('Camera2: ')
+    [ ~    , WetBdy2] = LagoonEdgePosition(Photo2FileName, ...
                                            WL, Config.Cam2, ...
                                            Config.FgBgMask2, ...
                                            Config.SeedPixel2, ...
                                            Twist2, WetBdy2); 
 
-    % Put variables into photos table
-    Photos.Twist(Cam1Photos) = Twist1;
-    Photos.Twist(Cam2Photos) = Twist2;
-    Photos.WetBdy(Cam1Photos) = WetBdy1;
-    Photos.WetBdy(Cam2Photos) = WetBdy2;
+    % Put variables into ShortlistPhotos table
+    ShortlistPhotos.Twist(ThisLoop,:) = Twist1;
+    ShortlistPhotos.WetBdy(ThisLoop) = ...
+        cellfun(@(a,b) [a;nan(1,2);b], WetBdy1, WetBdy2, ...
+                'UniformOutput', false);
+    ShortlistPhotos.WetBdy(isempty(WetBdy1) && isempty(WetBdy2)) = [];
     
     % Report progress
     fprintf('Extracting waters edge. %i out of %i completed\n', ...
-            ii, NoToProcess)
+            ii-1, NoToProcess)
 end
     
 % Clean up
@@ -158,26 +159,35 @@ clear Cam1Photos Cam2Photos WL Photo1FileName Photo2FileName Twist1 Twist2 ...
     WetBdy1 WetBdy2 IterationLimit NoToProcess ThisLoop ii
 
 % Save
-save('outputs\PhotoDatabase.mat','Photos','-v7.3')
+save('outputs\ShortlistPhotos.mat','ShortlistPhotos','-v7.3')
  
 
 %% QA on twist results
-ShortlistPhotos.TwistX = cellfun(@(x) x(1,1), Photos.Twist(ShortlistPhotos.Cam1Photo));
-ShortlistPhotos.TwistY = cellfun(@(x) x(1,2), Photos.Twist(ShortlistPhotos.Cam1Photo));
 
-WindowSize = 20;
+% calculate proportion of surrounding points within threshold tolerance
+WindowSize = 15;
+PixelThreshold = 15;
+PropThreshold = 0.35;
+PropDistLT = propDistLT([ShortlistPhotos.Twist(:,1), ...
+                         ShortlistPhotos.Twist(:,2)*2], ...
+                        WindowSize, PixelThreshold);
 
-PropDistLT = propTwistDistLT(ShortlistPhotos.TwistX, ShortlistPhotos.TwistY*2, 20, 20);
-
-Outliers = PropDistLT < 0.35;
+ShortlistPhotos.TwistOK = PropDistLT > PropThreshold;
 
 % view filtering results
-plot(ShortlistPhotos.UniqueTime(~Outliers), ShortlistPhotos.TwistX(~Outliers), 'bx', ...
-     ShortlistPhotos.UniqueTime(Outliers), ShortlistPhotos.TwistX(Outliers), 'rx', ...
-     ShortlistPhotos.UniqueTime(~Outliers), ShortlistPhotos.TwistY(~Outliers), 'b+', ...
-     ShortlistPhotos.UniqueTime(Outliers), ShortlistPhotos.TwistY(Outliers), 'r+');
+figure
+plot(ShortlistPhotos.UniqueTime(ShortlistPhotos.TwistOK), ...
+       ShortlistPhotos.Twist(ShortlistPhotos.TwistOK,1), 'bx', ...
+     ShortlistPhotos.UniqueTime(~ShortlistPhotos.TwistOK), ...
+       ShortlistPhotos.Twist(~ShortlistPhotos.TwistOK,1), 'rx', ...
+     ShortlistPhotos.UniqueTime(ShortlistPhotos.TwistOK), ...
+       ShortlistPhotos.Twist(ShortlistPhotos.TwistOK,2), 'b+', ...
+     ShortlistPhotos.UniqueTime(~ShortlistPhotos.TwistOK), ...
+       ShortlistPhotos.Twist(~ShortlistPhotos.TwistOK,2), 'r+');
 legend('valid TwistX','outlier TwistX','valid TwistY', 'outlier TwistY')
 ylabel('Twist (pixels)')
+
+clear WindowSize PixelThreshold PropDistLT
 
 %% Extract cross-section barrier backshore position
 
@@ -187,20 +197,18 @@ if ~any(strcmp('Offsets', ShortlistPhotos.Properties.VariableNames))
                                   size(Config.Transects,1));
 end
 
-% only process timesteps with WetBdy for both cameras
-TimesToProcess = ~cellfun(@isempty,Photos.WetBdy(ShortlistPhotos.Cam1Photo)) & ...
-                 ~cellfun(@isempty,Photos.WetBdy(ShortlistPhotos.Cam2Photo));
-PhotosToProcess = ShortlistPhotos(TimesToProcess,:);
+% only process timesteps which pass quality checks
+TimesToProcess = ShortlistPhotos.TwistOK;
 
 % Calculate the offsets for all times and transects
 [ShortlistPhotos.Offsets(TimesToProcess,:)] = ...
-    measureLagoonWidth(PhotosToProcess, Photos, Config.Transects, false);
+    measureLagoonWidth(ShortlistPhotos(TimesToProcess,:), Config.Transects, false);
 
 % tidy up
-clear TimesToProcess PhotosToProcess
+clear TimesToProcess
 
 %% plot the offset TS
-plot(ShortlistPhotos.UniqueTime, ShortlistPhotos.Offsets(:,7), 'x')
+plot(ShortlistPhotos.UniqueTime, ShortlistPhotos.Offsets, 'x')
 
 %% Make a list of daily high tide and low tide images
 

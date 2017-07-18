@@ -1,14 +1,11 @@
-function [Offsets] = measureLagoonWidth(ShortlistPhotos, Photos, ...
+function [Offsets] = measureLagoonWidth(ShortlistPhotos, ...
                                         Transects, DiagPlot)
 %Calculate offsets to barrier at Transects for each row in ShortlistPhotos
 %   [Offsets] = measureLagoonWidth(ShortlistPhotos, Photos, ...
 %                                  Transects, DiagPlot)
 
 % Setup broadcast variables
-WetBdy = cellfun(@(a,b) [a;nan(1,2);b], ...
-                 Photos.WetBdy(ShortlistPhotos.Cam1Photo), ...
-                 Photos.WetBdy(ShortlistPhotos.Cam2Photo), ...
-                 'UniformOutput', false);
+WetBdy = ShortlistPhotos.WetBdy;
 Offsets = ShortlistPhotos.Offsets;
 
 % set up progress reporting as this loop can be slow
@@ -18,7 +15,7 @@ fprintf(['Calculating transect offsets to waters edge.\n', ...
         repmat('.',1,min(70,NoToProcess)));
     
 % Calculate offsets
-for ii = 1:NoToProcess
+parfor ii = 1:NoToProcess
     if ~isempty(WetBdy{ii})
         Offsets(ii,:) = measureOffsets(WetBdy{ii}, Transects, DiagPlot)';
     end
