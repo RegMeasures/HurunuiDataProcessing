@@ -161,22 +161,36 @@ clear Cam1Photos Cam2Photos WL Photo1FileName Photo2FileName Twist1 Twist2 ...
 save('outputs\PhotoDatabase.mat','Photos','-v7.3')
  
 
-%% Extract lagoon area
+%% QA on twist results
+ShortlistPhotos.TwistX = cellfun(@(x) x(1,1), Photos.Twist(ShortlistPhotos.Cam1Photo));
+ShortlistPhotos.TwistY = cellfun(@(x) x(1,2), Photos.Twist(ShortlistPhotos.Cam1Photo));
 
-%polyarea
+WindowSize = 20;
+
+PropDistLT = propTwistDistLT(ShortlistPhotos.TwistX, ShortlistPhotos.TwistY*2, 20, 20);
+
+Outliers = PropDistLT < 0.35;
+
+% view filtering results
+plot(ShortlistPhotos.UniqueTime(~Outliers), ShortlistPhotos.TwistX(~Outliers), 'bx', ...
+     ShortlistPhotos.UniqueTime(Outliers), ShortlistPhotos.TwistX(Outliers), 'rx', ...
+     ShortlistPhotos.UniqueTime(~Outliers), ShortlistPhotos.TwistY(~Outliers), 'b+', ...
+     ShortlistPhotos.UniqueTime(Outliers), ShortlistPhotos.TwistY(Outliers), 'r+');
+legend('valid TwistX','outlier TwistX','valid TwistY', 'outlier TwistY')
+ylabel('Twist (pixels)')
 
 %% Extract cross-section barrier backshore position
-
-% only process timesteps with WetBdy for both cameras
-TimesToProcess = ~cellfun(@isempty,Photos.WetBdy(ShortlistPhotos.Cam1Photo)) & ...
-                 ~cellfun(@isempty,Photos.WetBdy(ShortlistPhotos.Cam2Photo));
-PhotosToProcess = ShortlistPhotos(TimesToProcess,:);
 
 % create column in ShortlistPhotos table to hold outputs if not already present
 if ~any(strcmp('Offsets', ShortlistPhotos.Properties.VariableNames))
     ShortlistPhotos.Offsets = nan(size(ShortlistPhotos,1), ...
                                   size(Config.Transects,1));
 end
+
+% only process timesteps with WetBdy for both cameras
+TimesToProcess = ~cellfun(@isempty,Photos.WetBdy(ShortlistPhotos.Cam1Photo)) & ...
+                 ~cellfun(@isempty,Photos.WetBdy(ShortlistPhotos.Cam2Photo));
+PhotosToProcess = ShortlistPhotos(TimesToProcess,:);
 
 % Calculate the offsets for all times and transects
 [ShortlistPhotos.Offsets(TimesToProcess,:)] = ...
