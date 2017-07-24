@@ -164,6 +164,7 @@ clear Cam1Photos Cam2Photos WL Photo1FileName Photo2FileName Twist1 Twist2 ...
 % Save
 save('outputs\ShortlistPhotos.mat','ShortlistPhotos','-v7.3')
  
+% load('outputs\ShortlistPhotos.mat')
 
 %% QA on twist results
 
@@ -178,7 +179,8 @@ PropDistLT = propDistLT([ShortlistPhotos.Twist(:,1), ...
 ShortlistPhotos.TwistOK = PropDistLT > PropThreshold;
 
 % view filtering results
-figure
+figure('Position', [(ScrSz(3)/2)-600, ScrSz(4)/2-200, 1200, 400]);
+orient landscape
 plot(ShortlistPhotos.UniqueTime(ShortlistPhotos.TwistOK), ...
        ShortlistPhotos.Twist(ShortlistPhotos.TwistOK,1), 'bx', ...
      ShortlistPhotos.UniqueTime(~ShortlistPhotos.TwistOK), ...
@@ -189,6 +191,7 @@ plot(ShortlistPhotos.UniqueTime(ShortlistPhotos.TwistOK), ...
        ShortlistPhotos.Twist(~ShortlistPhotos.TwistOK,2), 'r+');
 legend('valid TwistX','outlier TwistX','valid TwistY', 'outlier TwistY')
 ylabel('Twist (pixels)')
+export_fig 'outputs\TwistQA.pdf' -pdf
 
 clear WindowSize PixelThreshold PropDistLT
 
@@ -233,13 +236,21 @@ ShortlistPhotos.OffsetOK(OffsetOK) = ShortlistPhotos.Offsets(OffsetOK);
 
 clear WindowSize OffsetThreshold PropThreshold ProportionOK OffsetOK
 
-%% plot the filtered Offset time series
+% plot the filtered Offset time series
 for TransectNo = 1:size(ShortlistPhotos.Offsets,2);
-    figure('Position', [1+10*(TransectNo-1), ScrSz(4)/2-10*(TransectNo-1), ScrSz(3), 300]);
+    figure('Position', [(ScrSz(3)/2)-660+10*(TransectNo-1), ...
+                        ScrSz(4)/2-10*(TransectNo-1), 1200, 400],...
+           'PaperOrientation', 'landscape');
     plot(ShortlistPhotos.UniqueTime, ShortlistPhotos.Offsets(:,TransectNo), 'rx', ...
          ShortlistPhotos.UniqueTime, ShortlistPhotos.OffsetOK(:,TransectNo), 'bx')
     title(sprintf('Transect %i',TransectNo))
     ylabel('Offset to barrier backshore (m)')
+    if TransectNo == 1
+        export_fig 'outputs\Offests.pdf' -pdf
+    else
+        export_fig 'outputs\Offests.pdf' -pdf -append
+    end
+    close
 end
 clear TransectNo
 

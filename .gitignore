@@ -6,3 +6,4 @@
 
 # Ignore mat files in outputs
 outputs/*.mat
+*.pdf
