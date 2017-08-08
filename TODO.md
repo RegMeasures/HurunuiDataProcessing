@@ -15,3 +15,6 @@ To do:
 - [ ] handle multiple returns when looking for offsets
 - [ ] measure mouth position alongshore
 - [ ] output plots to pdf
+- [ ] improve cleanWetBdy so it removes the artificial edges at the edge of the 
+      frame near the camera
+- [ ] check order of twist measurement, distortion correction, etc

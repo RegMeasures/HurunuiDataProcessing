@@ -89,16 +89,34 @@ WatersEdge = WatersEdge.ncst{1,1};
 % run the test and plot all figures
 testProjectToMapLooper(Config, TestImage1, TestImage2, WL, WatersEdge)
 
-%% Project image Test 3
+%% Project image 3
+
+% load test image
+TestImage1 = imread('E:\Hurunui\PhotoRecord\ImageStore\2017\05\Hurunui1\Hurunui1_17-05-24_12-45-47-15.jpg');
+TestImage2 = imread('E:\Hurunui\PhotoRecord\ImageStore\2017\05\Hurunui2\Hurunui2_17-05-24_12-45-00-62.jpg');
+
+% WL at time of image, corrected to LVD
+WL = 2.512 + Config.LagoonOffset;
+
+% Wateredge calibration, digitised from SFM orthophoto
+WatersEdge = m_shaperead('C:\Users\rme67\OneDrive - NIWA\Hapua\Hurunui\GIS\Survey\2017-05-24 barrier RTK\WatersEdge_2017-05-24');
+WatersEdge = [cell2mat(WatersEdge.ncst(1:77,1)); nan(1,2); cell2mat(WatersEdge.ncst(79:end-2,1))];
+
+% run the test and plot all figures
+testProjectToMapLooper(Config, TestImage1, TestImage2, WL, WatersEdge)
+
+%% Project image 4
+
+%NEED TO UPDATE TO 1:30pm IMAGE AND WL WHEN AVAILABLE
 
 % load test image
 % TestImage1 = imread('H:\Hapua\Individual_Hapua\Hurunui\PhotoRecord\ImageStore\2015\10\Hurunui1\Hurunui1_15-10-07_15-28-48-75.jpg');
 % TestImage2 = imread('H:\Hapua\Individual_Hapua\Hurunui\PhotoRecord\ImageStore\2015\10\Hurunui2\Hurunui2_15-10-07_15-28-52-74.jpg');
-TestImage1 = imread('Hurunui1_17-07-26_13-00-00-00.jpg');
-TestImage2 = imread('Hurunui2_17-07-26_13-00-00-00.jpg');
+TestImage1 = imread('E:\Hurunui\PhotoRecord\ImageStore\2017\07\Hurunui1\Hurunui1_17-07-26_09-17-11-91.jpg');
+TestImage2 = imread('E:\Hurunui\PhotoRecord\ImageStore\2017\07\Hurunui2\Hurunui2_17-07-26_09-17-03-27.jpg');
 
 % WL at time of image, corrected to LVD
-WL = 2.411 + Config.LagoonOffset;
+WL = 2.647 + Config.LagoonOffset;
 
 % Wateredge calibration from RTK survey
 WatersEdge = m_shaperead('E:\Hurunui\GIS\Survey\2017-07-26 bathy&RTK\2017-07-26_Survey_WatersEdge');
