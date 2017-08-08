@@ -31,7 +31,7 @@ H_XPixelMin = 2000; % horizontal search range for cliff edge [px]
 H_XPixelMax = 2400;
 H_YPixel = 550;     % vert coord of horiz search line for cliff edge [px]
 H_YBand = 20;        % search band thickness for cliff edge search [px]
-H_dHSVthresh = 2e-6;% initial dHSV threshold
+H_dSVthresh = 2e-4;% initial dHSV threshold
 H_FilterRadius = 5;
 
 % vertical (horizon) search parameters
@@ -57,37 +57,22 @@ dH = min([abs(HSVclip(1:end-1,1)-HSVclip(2:end,1)),...
           abs(HSVclip(1:end-1,1)-HSVclip(2:end,1)+1.0),...
           abs(HSVclip(1:end-1,1)-HSVclip(2:end,1)-1.0)],[],2);
 dS = abs(HSVclip(1:end-1,2)-HSVclip(2:end,2));
-dV = abs(HSVclip(1:end-1,2)-HSVclip(2:end,2));
-dHSV = dH .* dS .* dV;
+dV = abs(HSVclip(1:end-1,3)-HSVclip(2:end,3))/300;
+dSV = dH .* dS .* dV;
 
 % identify cliff edge in search zone
-
-% Method 1
-%[~,Edge] = max(dHSV);
-%Edge = Edge + XPixelMin - 1;
-
-% Method 2
-%Edge = find(dHSV > 0.2e-4, 1);
-%Edge = Edge + XPixelMin - 1;
-
-% Method 3
-% EdgeIni = find(dHSV > 0.2e-4, 1);
-% [~,Edge] = max(dHSV(max(EdgeIni+X2searchMin,1):min(EdgeIni+X2searchMax,end)));
-% Edge = Edge + max(EdgeIni+X2searchMin,1) + XPixelMin - 1;
-
-% Method 4
 dH = medfilt1(dH,H_FilterRadius);
 dS = medfilt1(dS,H_FilterRadius);
 dV = medfilt1(dV,H_FilterRadius);
-dHSV = dH .* dS .* dV;
+dSV = dS .* dV;
 
 % primary search
-H_EdgeIni = find(dHSV > H_dHSVthresh, 1);
+H_EdgeIni = find(dSV > H_dSVthresh, 1);
 while isempty(H_EdgeIni) 
     %warning('no cliff edge identified in MeasureTwist1, halving H_dHSVthresh')
-    H_dHSVthresh = H_dHSVthresh/2;
-    H_EdgeIni = find(dHSV > H_dHSVthresh, 1);
-    if sum(dHSV) == 0
+    H_dSVthresh = H_dSVthresh/2;
+    H_EdgeIni = find(dSV > H_dSVthresh, 1);
+    if sum(dSV) == 0
         Twist = nan(1,2);
         Edge = nan(1,2);
         return
@@ -96,7 +81,7 @@ end
 
 % find peak near this location
 H_Edge = H_EdgeIni;
-while dHSV(H_Edge+1) > dHSV(H_Edge) && H_Edge <= H_EdgeIni +FineSearchMax
+while dSV(H_Edge+1) > dSV(H_Edge) && H_Edge <= H_EdgeIni +FineSearchMax
     H_Edge = H_Edge+1;
 end
 
@@ -147,28 +132,29 @@ if dispPlots
     
     % cliff ID plots
     
-    % figure
-    % imshow(RGBimage(H_YPixel-H_YBand-50:H_YPixel+H_YBand+50,H_XPixelMin-50:H_XPixelMax+50,:))
-    % hold on
-    % plot([50,H_XPixelMax-H_XPixelMin+51],[51+H_YBand,51+H_YBand],'r-')
-    % plot([50,H_XPixelMax-H_XPixelMin+51],[50,50],'r:')
-    % plot([50,H_XPixelMax-H_XPixelMin+51],[51+2*H_YBand,51+2*H_YBand],'r:')
-    % plot([H_Edge-(H_XPixelMin-50),H_Edge-(H_XPixelMin-50)],[10,91+2*H_YBand],'r-')
-    % hold off
-    
-    % figure
-    % plot(HSVclip(:,1))
-    % hold on
-    % plot(HSVclip(:,2))
-    % plot(HSVclip(:,3)/300)
-    % legend({'H','S','V/300'})
-    % plot([H_Edge-H_XPixelMin,H_Edge-H_XPixelMin],[0,1],'k:')
-
-    % figure
-    % plot(dHSV)
-    % hold on
-    % plot([0,H_XPixelMax-H_XPixelMin+1],[H_dHSVthresh,H_dHSVthresh],'k:')
-    % plot([H_Edge-H_XPixelMin,H_Edge-H_XPixelMin],[0,max(dHSV)],'k:')
+%     figure
+%     imshow(RGBimage(H_YPixel-H_YBand-50:H_YPixel+H_YBand+50,H_XPixelMin-50:H_XPixelMax+50,:))
+%     hold on
+%     plot([50,H_XPixelMax-H_XPixelMin+51],[51+H_YBand,51+H_YBand],'r-')
+%     plot([50,H_XPixelMax-H_XPixelMin+51],[50,50],'r:')
+%     plot([50,H_XPixelMax-H_XPixelMin+51],[51+2*H_YBand,51+2*H_YBand],'r:')
+%     plot([H_Edge-(H_XPixelMin-50),H_Edge-(H_XPixelMin-50)],[10,91+2*H_YBand],'r-')
+%     hold off
+%     
+%     figure
+%     plot(HSVclip(:,1))
+%     hold on
+%     plot(HSVclip(:,2))
+%     plot(HSVclip(:,3)/300)
+%     legend({'H','S','V/300'})
+%     plot([H_Edge-H_XPixelMin,H_Edge-H_XPixelMin],[0,1],'k:')
+% 
+%     figure
+%     plot(dSV)
+%     legend('dSV')
+%     hold on
+%     plot([0,H_XPixelMax-H_XPixelMin+1],[H_dSVthresh,H_dSVthresh],'k:')
+%     plot([H_Edge-H_XPixelMin,H_Edge-H_XPixelMin],[0,max(dSV)],'k:')
     
     % Horizon ID plots
     
