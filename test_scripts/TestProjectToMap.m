@@ -68,60 +68,10 @@ LagoonWE = SurveyPts(3:108,:);
 MouthWE = SurveyPts(117:131,:);
 WL = mean(LagoonWE.Elevation);
 
-% find wet edges
-[WetMask1, WetBdy1] = WetDry2(TestImage1, Config.FgBgMask1, [1628, 1013], [], false);
-[WetMask2, WetBdy2] = WetDry2(TestImage2, Config.FgBgMask2, [1334, 950], [], false);
-
-% convert WetBdys to easting northing
-[BdyEasting1, BdyNorthing1] = ...
-    ProjectToMap(Config.Cam1, WL, [], WetBdy1(:,1), WetBdy1(:,2));
-[BdyEasting2, BdyNorthing2] = ...
-    ProjectToMap(Config.Cam2, WL, [], WetBdy2(:,1), WetBdy2(:,2));
-WetBdy1 = [BdyEasting1, BdyNorthing1];
-WetBdy2 = [BdyEasting2, BdyNorthing2];
-
-% Remove backshore part of WetBdy polygon to leave polyline along barrier
-WetBdy1 = cleanWetBdy(WetBdy1);
-WetBdy2 = cleanWetBdy(WetBdy2);
-
-% display projected image as surface
-figure('Position', [(ScrSz(3)/2)-700, ScrSz(4)/2-300, 1400, 400]);
-plotProjected(TestImage1,[0,0],WL,Config.Cam1,Config.FgBgMask1);
-hold on
-plotProjected(TestImage2,[0,0],WL,Config.Cam2,Config.FgBgMask2);
-
-% overlay surveyed waters edge
-hold on
-SurveyH = plot([MouthWE.Easting;LagoonWE.Easting], ...
-               [MouthWE.Northing;LagoonWE.Northing], 'c-');
-hold off
-
-% calculate offsets along transects and add them and WetBdy to plot
-WetBdy = [WetBdy1; ...
-          nan(1,2); ...
-          WetBdy2];
-Transects = m_shaperead('100mTransects_NZTM');
-Transects = Transects.ncst(23:39);
-Transects = cellfun(@flipud, Transects, 'UniformOutput', false);
-hold on
-[Offsets, OffsetsH] = measureOffsets(WetBdy,Transects,true);
-hold off
-
-% Tidy up the plot for export
-view(45,90)
-xlim([1622800,1624300])
-ylim([5248600,5250200])
-set(gca,'Position',[-0.6 -2.1 2.2 5])
-axis off
-legend([SurveyH;OffsetsH([1,2,4])], ...
-       {'Surveyed waters edge', ...
-        'Image analysis waters edge', ...
-        'Measurement transects', ...
-        'Measured offset'}, ...
-       'Position',[0.81 0.06 0.17 0.28], ...
-       'FontSize',11)
-
-% export_fig 'outputs\TestImage1.pdf' -pdf
+% run the test and plot all figures
+testProjectToMapLooper(Config,TestImage1,TestImage2,WL, ...
+                       [MouthWE.Easting, MouthWE.Northing; ...
+                        LagoonWE.Easting, LagoonWE.Northing])
 
 %% Project image 2
 
@@ -136,64 +86,24 @@ WL = 2.411 + Config.LagoonOffset;
 WatersEdge = m_shaperead('E:\Hurunui\GIS\Survey\2015-08-26 minor error\WetAreaPolygon');
 WatersEdge = WatersEdge.ncst{1,1};
 
-% Ground control points
-GCPS = m_shaperead('E:\Hurunui\GIS\Survey\2015-08-26 minor error\GCPs');
-GCPS = cell2mat(GCPS.ncst);
+% run the test and plot all figures
+testProjectToMapLooper(Config, TestImage1, TestImage2, WL, WatersEdge)
 
-% Measure pole twist
-Twist = MeasureTwist1(TestImage1,true);
+%% Project image Test 3
 
-% find wet edges
-[WetMask1, WetBdyPx1] = WetDry2(TestImage1, Config.FgBgMask1, [1628, 1013], Twist, true);
-[WetMask2, WetBdyPx2] = WetDry2(TestImage2, Config.FgBgMask2, [1334, 950], [Twist(1),-Twist(2)], false);
+% load test image
+% TestImage1 = imread('H:\Hapua\Individual_Hapua\Hurunui\PhotoRecord\ImageStore\2015\10\Hurunui1\Hurunui1_15-10-07_15-28-48-75.jpg');
+% TestImage2 = imread('H:\Hapua\Individual_Hapua\Hurunui\PhotoRecord\ImageStore\2015\10\Hurunui2\Hurunui2_15-10-07_15-28-52-74.jpg');
+TestImage1 = imread('Hurunui1_17-07-26_13-00-00-00.jpg');
+TestImage2 = imread('Hurunui2_17-07-26_13-00-00-00.jpg');
 
-% convert WetBdys to easting northing
-[BdyEasting1, BdyNorthing1] = ...
-    ProjectToMap(Config.Cam1, WL, Twist, WetBdyPx1(:,1), WetBdyPx1(:,2));
-[BdyEasting2, BdyNorthing2] = ...
-    ProjectToMap(Config.Cam2, WL, [Twist(1),-Twist(2)], WetBdyPx2(:,1), WetBdyPx2(:,2));
-WetBdy1 = [BdyEasting1, BdyNorthing1];
-WetBdy2 = [BdyEasting2, BdyNorthing2];
+% WL at time of image, corrected to LVD
+WL = 2.411 + Config.LagoonOffset;
 
-% Remove backshore part of WetBdy polygon to leave polyline along barrier
-WetBdy1 = cleanWetBdy(WetBdy1);
-WetBdy2 = cleanWetBdy(WetBdy2);
+% Wateredge calibration from RTK survey
+WatersEdge = m_shaperead('E:\Hurunui\GIS\Survey\2017-07-26 bathy&RTK\2017-07-26_Survey_WatersEdge');
+WatersEdge = cell2mat(WatersEdge.ncst);
 
-% display projected image as surface
-figure('Position', [(ScrSz(3)/2)-700, ScrSz(4)/2-300, 1400, 400]);
-plotProjected(TestImage1,Twist,WL,Config.Cam1,Config.FgBgMask1);
-hold on
-plotProjected(TestImage2,[Twist(1),-Twist(2)],WL,Config.Cam2,Config.FgBgMask2);
-hold off
-
-% overlay SFM waters edge and Ground Control
-hold on
-SurveyH = plot(WatersEdge(:,1), WatersEdge(:,2), 'b-');
-GcpsH = plot(GCPS(:,1), GCPS(:,2), 'cx');
-hold off
-
-% calculate offsets along transects and add them and WetBdy to plot
-WetBdy = [WetBdy1; ...
-          nan(1,2); ...
-          WetBdy2];
-
-Transects = m_shaperead('100mTransects_NZTM');
-Transects = Transects.ncst(23:39);
-Transects = cellfun(@flipud, Transects, 'UniformOutput', false);
-hold on
-[Offsets, OffsetsH] = measureOffsets(WetBdy,Transects,true);
-hold off
-
-% Tidy up the plot for export
-view(45,90)
-xlim([1622800,1624300])
-ylim([5248600,5250200])
-set(gca,'Position',[-0.6 -2.1 2.2 5])
-axis off
-legend([SurveyH;OffsetsH([1,2,4])], ...
-       {'Surveyed waters edge', ...
-        'Image analysis waters edge', ...
-        'Measurement transects', ...
-        'Measured offset'}, ...
-       'Position',[0.81 0.06 0.17 0.28], ...
-       'FontSize',11)
+% run the test and plot all figures
+testProjectToMapLooper(Config,TestImage1,TestImage2,WL, ...
+                       WatersEdge)
