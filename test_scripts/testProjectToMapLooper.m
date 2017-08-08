@@ -28,9 +28,9 @@ WetBdy2 = cleanWetBdy(WetBdy2);
 
 % display projected image as surface
 figure('Position', [(ScrSz(3)/2)-700, ScrSz(4)/2-300, 1400, 400]);
-plotProjected(TestImage1,[0,0],WL,Config.Cam1,Config.FgBgMask1);
+plotProjected(TestImage1,Twist,WL,Config.Cam1,Config.FgBgMask1);
 hold on
-plotProjected(TestImage2,[0,0],WL,Config.Cam2,Config.FgBgMask2);
+plotProjected(TestImage2,[Twist(1),-Twist(2)],WL,Config.Cam2,Config.FgBgMask2);
 
 % overlay surveyed waters edge
 hold on

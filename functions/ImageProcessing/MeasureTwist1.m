@@ -6,7 +6,7 @@ function [Twist,Edge] = MeasureTwist1(RGBimage,dispPlots)
 %   RGBimage = Cam1 image i.e. imread('Hurunui1_*.jpg')
 %   test     = boolean, true = show plots (default = false)
 %   Twist    = diff in edge position of cliff to calibration image (pixels)
-%              [H_Twist,V_Twist]
+%              [px across, px down]
 %   Edge     = optional output, absolute cliff edge position in pixels
 %              from LHside of image.
 %              [H_Edge,V_Edge]
@@ -125,7 +125,7 @@ dGray = abs(GrayLine(1:end-1)-GrayLine(2:end));
 
 % apply relevant offsets to identified edge
 V_Edge = V_Edge + V_YPixelMin - 1;
-V_Twist = V_Edge - V_CalibEdge;
+V_Twist =  V_CalibEdge - V_Edge;
 
 %% Test plots
 if dispPlots
