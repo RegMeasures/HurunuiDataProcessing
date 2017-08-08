@@ -19,7 +19,7 @@ end
 Z = zeros(size(PixelX));
 surf(AX,PixelX,PixelY,Z,RGBimage,'EdgeColor','none','FaceColor','texturemap')
 view(2)
-axis equal
+axis image
 
 
 end
