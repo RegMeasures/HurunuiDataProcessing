@@ -35,7 +35,7 @@ CellTwist = mat2cell(Twist,ones(NoOfPhotos,1));
 
 %% Loop through days
 
-% start parralel pool
+% start parallel pool
 if isempty(gcp('nocreate'))
     numCores = feature('numcores');
     parpool(numCores);

@@ -4,7 +4,7 @@ function testProjectToMapLooper(Config,TestImage1,TestImage2,WL,SurveyPoints)
 ScrSz = get(groot, 'ScreenSize');
 
 % Measure pole twist
-Twist = MeasureTwist1(TestImage1,true);
+Twist = MeasureTwist1(TestImage1,true,Config.Cam1.k,Config.Cam1.Resolution);
 
 % find wet edges
 [WetMask1, WetBdy1] = WetDry2(TestImage1, Config.FgBgMask1, ...
@@ -28,14 +28,14 @@ WetBdy2 = cleanWetBdy(WetBdy2);
 
 % display projected image as surface
 figure('Position', [(ScrSz(3)/2)-700, ScrSz(4)/2-300, 1400, 400]);
-plotProjected(TestImage1,Twist,WL,Config.Cam1,Config.FgBgMask1);
-hold on
-plotProjected(TestImage2,[Twist(1),-Twist(2)],WL,Config.Cam2,Config.FgBgMask2);
+MapAx = plotProjected(TestImage1,Twist,WL,Config.Cam1,Config.FgBgMask1,[],true);
+hold(MapAx,'on')
+plotProjected(TestImage2,[Twist(1),-Twist(2)],WL,Config.Cam2,Config.FgBgMask2,MapAx);
 
 % overlay surveyed waters edge
-hold on
-SurveyH = plot(SurveyPoints(:,1), SurveyPoints(:,2), 'c-');
-hold off
+hold(MapAx,'on')
+SurveyH = plot(MapAx,SurveyPoints(:,1), SurveyPoints(:,2), 'c-');
+hold(MapAx,'off')
 
 % calculate offsets along transects and add them and WetBdy to plot
 WetBdy = [WetBdy1; ...
@@ -44,17 +44,17 @@ WetBdy = [WetBdy1; ...
 Transects = m_shaperead('100mTransects_NZTM');
 Transects = Transects.ncst(23:39);
 Transects = cellfun(@flipud, Transects, 'UniformOutput', false);
-hold on
-[Offsets, OffsetsH] = measureOffsets(WetBdy,Transects,true);
-hold off
+hold(MapAx,'on')
+[Offsets, OffsetsH] = measureOffsets(WetBdy,Transects,true,MapAx);
+hold(MapAx,'off')
 
 % Tidy up the plot for export
-view(45,90)
-xlim([1622800,1624300])
-ylim([5248600,5250200])
-set(gca,'Position',[-0.6 -2.1 2.2 5])
-axis off
-legend([SurveyH;OffsetsH([1,2,4])], ...
+view(MapAx,45,90)
+xlim(MapAx,[1622800,1624300])
+ylim(MapAx,[5248600,5250200])
+set(MapAx,'Position',[-0.6 -2.1 2.2 5])
+axis(MapAx,'off')
+legend(MapAx, [SurveyH;OffsetsH([1,2,4])], ...
        {'Surveyed waters edge', ...
         'Image analysis waters edge', ...
         'Measurement transects', ...

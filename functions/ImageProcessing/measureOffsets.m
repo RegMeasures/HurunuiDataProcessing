@@ -1,4 +1,4 @@
-function [Offsets, PlotHs] = measureOffsets(WetBdy, Transects, DiagPlot)
+function [Offsets, PlotHs] = measureOffsets(WetBdy, Transects, DiagPlot, AX)
 %MEASUREOFFSETS Function to measure offset to lagoon edge along multiple transects
 %   [Offsets] = measureOffsets(WetBdy,Transects)
 %      Measure and return offsets at each transect.
@@ -6,8 +6,12 @@ function [Offsets, PlotHs] = measureOffsets(WetBdy, Transects, DiagPlot)
 %   [Offsets, PlotHs] = measureOffsets(WetBdy, Transects, true)
 %      Produce diagnostic plot and return handles to plotted line data.
 
-if ~exist('DiagPlot','var')
+if ~exist('DiagPlot','var') || isempty(DiagPlot)
     DiagPlot = false;
+end
+
+if DiagPlot && ~exist('AX','var') || isempty(AX)
+    AX = gca;
 end
 
 Offsets = nan(size(Transects));
@@ -34,13 +38,13 @@ end
 
 % Plot only if specified
 if DiagPlot
-    Line1 = plot(WetBdy(:,1),WetBdy(:,2),'k');
+    Line1 = plot(AX,WetBdy(:,1),WetBdy(:,2),'k');
     axis equal
-    hold on
+    hold(AX,'on')
     for TranNo = 1:size(Transects,1)
     
-        Line2 = plot(Transects{TranNo}(:,1),Transects{TranNo}(:,2),'g--');
-        Line3 = plot(Transects{TranNo}(1,1),Transects{TranNo}(1,2),'gx');
+        Line2 = plot(AX,Transects{TranNo}(:,1),Transects{TranNo}(:,2),'g--');
+        Line3 = plot(AX,Transects{TranNo}(1,1),Transects{TranNo}(1,2),'gx');
         LineLength = sqrt((Transects{TranNo}(2,1) - Transects{TranNo}(1,1)).^2 + ...
                           (Transects{TranNo}(2,2) - Transects{TranNo}(1,2)).^2);
         plotX = Transects{TranNo}(1,1) + ...
@@ -49,7 +53,7 @@ if DiagPlot
         plotY = Transects{TranNo}(1,2) + ...
                 (Transects{TranNo}(2,2) - Transects{TranNo}(1,2)) * ...
                 (Offsets(TranNo)/LineLength);
-        Line4 = plot(plotX,plotY,'ro','MarkerFaceColor','r');
+        Line4 = plot(AX,plotX,plotY,'ro','MarkerFaceColor','r');
         PlotHs = [Line1;Line2;Line3;Line4];
     end
 end

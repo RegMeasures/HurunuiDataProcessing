@@ -94,7 +94,7 @@ end
 ShortlistPhotos = ShortlistPhotos(~isnan(ShortlistPhotos.Cam1Photo) & ...
                                   ~isnan(ShortlistPhotos.Cam2Photo), :);
 
-%% Loop through images and extract waters edge
+%% Loop through images, measure twist and extract waters edge
 
 NoToProcess = size(ShortlistPhotos,1);
 
