@@ -7,7 +7,9 @@ function Config = HurunuiAnalysisConfig()
 % Main data drive/folder
 %Config.DataFolder = 'H:\Hapua\Individual_Hapua\Hurunui';
 %Config.DataFolder = '\\engcad4\GISdump\Richard\';
-Config.DataFolder = 'E:\Hurunui';
+%Config.DataFolder = 'E:\Hurunui';
+Config.DataFolder = fullfile(getenv('USERPROFILE'),'OneDrive - NIWA',...
+                             'Hapua\Hurunui');
 
 % River flow timeseries from ECan web services
 Config.HurunuiSH1EcanData = 'http://data.ecan.govt.nz/data/79/Water/River%20stage%20flow%20data%20for%20individual%20site/CSV?SiteNo=65101&Period=All&StageFlow=River%20Flow';
