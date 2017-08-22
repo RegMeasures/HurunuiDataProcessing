@@ -8,10 +8,10 @@ Twist = MeasureTwist1(TestImage1,true,Config.Cam1.k,Config.Cam1.Resolution);
 
 % find wet edges
 [WetMask1, WetBdy1] = WetDry2(TestImage1, Config.FgBgMask1, ...
-                              Config.SeedPixel1, Twist, true);
+                              Config.SeedPixel1, Twist, false);
 [WetMask2, WetBdy2] = WetDry2(TestImage2, Config.FgBgMask2, ...
                               Config.SeedPixel2, [Twist(1),-Twist(2)], ...
-                              true);
+                              false);
 
 % convert WetBdys to easting northing
 [BdyEasting1, BdyNorthing1] = ...
@@ -28,9 +28,11 @@ WetBdy2 = cleanWetBdy(WetBdy2);
 
 % display projected image as surface
 figure('Position', [(ScrSz(3)/2)-700, ScrSz(4)/2-300, 1400, 400]);
-MapAx = plotProjected(TestImage1,Twist,WL,Config.Cam1,Config.FgBgMask1,[],true);
+MapAx = plotProjected(TestImage1,Twist,WL,Config.Cam1,...
+                      Config.FgBgMask1,[],true);
 hold(MapAx,'on')
-plotProjected(TestImage2,[Twist(1),-Twist(2)],WL,Config.Cam2,Config.FgBgMask2,MapAx);
+plotProjected(TestImage2,[Twist(1),-Twist(2)],WL,Config.Cam2,...
+              Config.FgBgMask2,MapAx,true);
 
 % overlay surveyed waters edge
 hold(MapAx,'on')

@@ -116,6 +116,10 @@ WL = 2.647 + Config.LagoonOffset;
 WatersEdge = m_shaperead(fullfile(Config.DataFolder,'GIS\Survey\2017-07-26 bathy&RTK\2017-07-26_Survey_WatersEdge'));
 WatersEdge = cell2mat(WatersEdge.ncst);
 
+Config.Cam1.Roll = 2.7;
+Config.Cam2.Roll = 0.3;
+Config.Cam2.k    = +0.335;
+
 % run the test and plot all figures
 testProjectToMapLooper(Config,TestImage1,TestImage2,WL, ...
                        WatersEdge)
