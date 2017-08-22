@@ -125,3 +125,14 @@ WatersEdge = cell2mat(WatersEdge.ncst);
 % run the test and plot all figures
 testProjectToMapLooper(Config,TestImage1,TestImage2,WL, ...
                        WatersEdge)
+                   
+%% Buzz saw space-for-time substituion example
+% load test image
+TestImage1 = imread('E:\Hurunui\PhotoRecord\ImageStore\2016\12\Hurunui1\Hurunui1_16-12-13_08-36-13-03.jpg');
+TestImage2 = imread('E:\Hurunui\PhotoRecord\ImageStore\2016\12\Hurunui2\Hurunui2_16-12-13_08-35-50-93.jpg');
+
+% WL at time of image, corrected to LVD
+WL = 2.354 + Config.LagoonOffset;
+
+% run the test and plot all figures
+testProjectToMapLooper(Config,TestImage1,TestImage2,WL)
