@@ -26,17 +26,17 @@ Photos = AllPhotos(CaptureMins==30 | CaptureMins==0,:);
 
 clear AllPhotos
 
-%% Load previously calculated metrics to avoid duplication of effort
-PhotosPrevious = load('outputs\PhotoDatabase.mat');
-PhotosPrevious = PhotosPrevious.Photos;
-
 %% Generate quality metrics and assess quality
 
-% generate metrics
+% generate metrics from scratch
 Photos = photoQuality(fullfile(Config.DataFolder,Config.PhotoFolder), ...
-                      Photos,PhotosPrevious);
+                      Photos);
+                  
+% Or alternatively re-use previously calculated metrics to avoid duplication of effort
+%PhotosPrevious = load('outputs\PhotoDatabase.mat');
+%PhotosPrevious = PhotosPrevious.Photos;
 %Photos = photoQuality(fullfile(Config.DataFolder,Config.PhotoFolder), ...
-%                      Photos);
+%                      Photos,PhotosPrevious);
 
 % assess quality
 Photos.QualityOk = Photos.Sharpness > Config.SharpThresh & ...

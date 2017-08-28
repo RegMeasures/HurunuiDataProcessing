@@ -1,4 +1,4 @@
-function testProjectToMapLooper(Config,TestImage1,TestImage2,WL,SurveyPoints)
+function [Twist,WetBdy,Offsets] = testProjectToMapLooper(Config,TestImage1,TestImage2,WL,SurveyPoints)
 
 % get screensize for plot setups
 ScrSz = get(groot, 'ScreenSize');

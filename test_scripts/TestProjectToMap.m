@@ -64,10 +64,14 @@ LagoonWE = SurveyPts(3:108,:);
 MouthWE = SurveyPts(117:131,:);
 WL = mean(LagoonWE.Elevation);
 
+Config.FgBgMask1 = false(size(Config.FgBgMask1));
+Config.FgBgMask2 = false(size(Config.FgBgMask2));
+
 % run the test and plot all figures
-testProjectToMapLooper(Config,TestImage1,TestImage2,WL, ...
-                       [MouthWE.Easting, MouthWE.Northing; ...
-                        LagoonWE.Easting, LagoonWE.Northing])
+[Twist,WetBdy,Offsets] = ...
+    testProjectToMapLooper(Config,TestImage1,TestImage2,WL, ...
+                           [MouthWE.Easting, MouthWE.Northing; ...
+                            LagoonWE.Easting, LagoonWE.Northing]);
 
 %% Project image 2
 
@@ -119,6 +123,8 @@ WatersEdge = cell2mat(WatersEdge.ncst);
 Config.Cam1.Roll = 2.7;
 Config.Cam2.Roll = 0.3;
 Config.Cam2.k    = +0.335;
+
+
 
 % run the test and plot all figures
 testProjectToMapLooper(Config,TestImage1,TestImage2,WL, ...

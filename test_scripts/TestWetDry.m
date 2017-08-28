@@ -32,7 +32,7 @@ for ImageNo = 1:length(TestFiles)
     RawImage = imread(TestFiles{ImageNo});
     
     %% measure Twist
-    Twist = MeasureTwist1(RawImage);
+    Twist = MeasureTwist1(RawImage, Cam1.k, Cam1.Resolution);
     
     %% image classification
     [WetMask, WetBdy] = WetDry2(RawImage, FgBgMask1, WetXY, Twist, true);

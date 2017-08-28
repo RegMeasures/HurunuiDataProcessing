@@ -1,21 +1,26 @@
-function [Twist,Edge] = MeasureTwist1(RGBimage,dispPlots,k,Resolution)
+function [Twist,Edge] = MeasureTwist1(RGBimage,k,Resolution,dispPlots)
 %MEASURETWIST1   identify cliff edge in cam1 to inform pole twist correction
 %   
 %   [Twist,Edge] = MEASURESTWIST1(RGBimage,test)
-%
-%   RGBimage = Cam1 image i.e. imread('Hurunui1_*.jpg')
-%   test     = boolean, true = show plots (default = false)
-%   Twist    = diff in edge position of cliff to calibration image (pixels)
-%              [px across, px down]
-%   Edge     = optional output, absolute cliff edge position in pixels
-%              from LHside of image.
-%              [H_Edge,V_Edge]
+%   
+%   Inputs:
+%      RGBimage  = Cam1 image i.e. imread('Hurunui1_*.jpg')
+%      k         = k value for barrel distortion correction as used for 
+%                  lensdistort
+%      Resolution= Image size [width, height] (pixels)
+%      dispPlots = boolean, true = show plots (optional, default = false)
+%   Outputs:
+%      Twist     = diff in edge position of cliff to calibration image
+%                  [px across, px down]
+%      Edge      = optional output, absolute cliff edge position in pixels
+%                  from LHside of image.
+%                  [H_Edge,V_Edge]
 %
 %   See also: MeasureTwist2
 
 % set default dispPlots if not supplied 
 % (default is not to display diagnistics)
-if ~exist('dispPlots','var')
+if ~exist('dispPlots','var') || isempty(dispPlots)
     dispPlots = false;
 end
 
@@ -23,7 +28,7 @@ end
 
 % Edge position corresponding to Twist = 0 [px] 
 % note: these are based on Hurunui1_15-10-07_15-28-48-75.jpg
-H_CalibEdge = 2335;
+H_CalibEdge = 2329; %2335;
 V_CalibEdge = 153;
 
 % horizontal (cliff) search params
@@ -137,7 +142,7 @@ V_Twist =  V_Edge - V_CalibEdge;
                                   H_YPixel - (Resolution(2)+1)/2, ...
                                   k, Resolution);
 [H_Edge2, ~] = radialdistort(H_Edge - (Resolution(1)+1)/2, ...
-                             H_YPixel - (Resolution(1)+1)/2, ...
+                             H_YPixel - (Resolution(2)+1)/2, ...
                              k, Resolution);
 H_Twist2 = round(H_Edge2 - H_CalibEdge2);
 
