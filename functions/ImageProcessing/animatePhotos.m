@@ -32,12 +32,20 @@ function animatePhotos(VideoName, ...
 
 %% Set defaults and plot options
 PlotLevel = false;
-PlotFlow = false;
+PlotTide = false;
+PlotQin = false;
+PlotQout = false;
 PlotWave = false;
 PlotChannel = false;
 if exist('LagoonTs','var') || isempty(LagoonTs)
     PlotLevel = true;
-    PlotFlow = true;
+    PlotQin = true;
+    if ismember('Qout', LagoonTs.Properties.VariableNames)
+        PlotQout = true;
+    end
+    if ismember('SeaLevel', LagoonTs.Properties.VariableNames)
+        PlotTide = true;
+    end
     if ismember('WaveHs', LagoonTs.Properties.VariableNames)
         PlotWave = true;
     end
@@ -55,41 +63,97 @@ if ~exist('DateOnly','var') || isempty(DateOnly)
 end
 
 %% generate flow plot ready to insert into movie
-if PlotFlow
+if PlotQin
     FlowFig.FigureH = figure('Position',[100, 100, 648, 200],...
                              'Name','SH1 Flow');
     FlowFig.LineH = plot(LagoonTs.DateTime, LagoonTs.Qin, 'b-');
     FlowFig.AxesH = gca;
     hold on
-    FlowFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.Qin(end), 'r.', 'MarkerSize',15);
+    FlowFig.PointH = plot(FlowFig.AxesH, LagoonTs.DateTime(end), ...
+                          LagoonTs.Qin(end), 'b.', 'MarkerSize',15);
+    if PlotQout
+        FlowFig.QoutLineH = plot(FlowFig.AxesH, LagoonTs.DateTime, ...
+                                 LagoonTs.Qout, 'c-');
+        FlowFig.QoutPointH = plot(FlowFig.AxesH, LagoonTs.DateTime(end), ...
+                                  LagoonTs.Qout(end), 'c.', 'MarkerSize',15);
+        legend([FlowFig.QoutLineH,FlowFig.LineH], ...
+               {'River flow','Lagoon outflow'}, ...
+               'Location', 'NorthWest')
+        legend('boxoff')
+        FlowFig.LabelH = text(145,135, ...
+                              sprintf('= %0.0f m^3/s\n= %0.0f m^3/s', ...
+                                      LagoonTs.Qin(end), LagoonTs.Qout(end)),...
+                              'units','pixels',...
+                              'HorizontalAlignment','left', ...
+                              'FontSize', 9);
+    else
+        FlowFig.LabelH = text(70,135, ...
+                              sprintf('River flow = %0.0f m^3/s', ...
+                                      LagoonTs.Qin(end)),...
+                              'units','pixels',...
+                              'HorizontalAlignment','left', ...
+                              'FontSize', 9);
+    end
     hold off
-    ylabel('Flow at SH1 [m^3/s]')
+    ylabel('Flow rate [m^3/s]')
     ylim([0,200])
-    FlowFig.LabelH = text(70,130, ...
-                          sprintf('%0.1fm^3/s', LagoonTs.Qin(end)),...
-                          'units','pixels',...
-                          'HorizontalAlignment','right');
+    set(FlowFig.AxesH, 'Position', [0.1, 0.1117, 0.87, 0.8133])
 else
-    FlowPlot.cdata = 240 * ones(200, 648, 3, 'int8');
+    FlowPlot.cdata = 255 * ones(200, 648, 3, 'int8');
 end
 
 %% generate level plot ready to insert into movie
 if PlotLevel
-    LevelFig.FigureH = figure('Position',[100, 400, 648, 200],...
-                             'Name','Lagoon level');
+    if PlotChannel || ~PlotWave
+        LevelFig.FigureH = figure('Position',[100, 400, 648, 200],...
+                                  'Name','Lagoon level');
+    else
+        % if we're not plotting channel data then make level plot bigger
+        LevelFig.FigureH = figure('Position',[100, 400, 648, 400],...
+                                  'Name','Lagoon level');
+    end
     LevelFig.LineH = plot(LagoonTs.DateTime, LagoonTs.WL, 'b-');
     LevelFig.AxesH = gca;
     hold on
-    LevelFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.WL(end), 'r.', 'MarkerSize',15);
+    LevelFig.PointH = plot(LevelFig.AxesH, LagoonTs.DateTime(end), ...
+                           LagoonTs.WL(end), 'b.', 'MarkerSize',15);
+    
+    if PlotTide
+        % Add in tide plot
+        LevelFig.TideLineH = plot(LevelFig.AxesH, LagoonTs.DateTime, ...
+                                  LagoonTs.SeaLevel, 'c-');
+        LevelFig.TidePointH = plot(LevelFig.AxesH, LagoonTs.DateTime(end), ...
+                                   LagoonTs.SeaLevel(end), 'c.', 'MarkerSize',15);
+        ylabel('Water level [m]')
+        ylim([-1.0,3.5])
+        legend([LevelFig.LineH,LevelFig.TideLineH], ...
+               {'Lagoon level','SeaLevel'}, ...
+               'Location', 'NorthWest')
+        set(LevelFig.AxesH, 'Position', [0.1, 0.1100, 0.87, 0.8150])
+    else
+        ylabel('Lagoon level [m]')
+        ylim([0.5,3.5])
+        set(LevelFig.AxesH, 'Position', [0.1, 0.1117, 0.87, 0.8133])
+    end
+    
     hold off
-    ylabel('Lagoon level [m]')
-    ylim([0.5,3.5])
 else
-    LevelPlot.cdata = 240 * ones(200, 648, 3, 'int8');
+    if PlotChannel || ~PlotWave
+        LevelPlot.cdata = 255 * ones(200, 648, 3, 'int8');
+    else
+        LevelPlot.cdata = 255 * ones(400, 648, 3, 'int8');
+    end
 end
 
 %% generate wave height plot ready to insert into movie
 if PlotWave
+    
+    % Smooth wave data for plotting using simple 3 point moving average
+    LagoonTs.WaveHsSmooth = ...
+        ([LagoonTs.WaveHs(1);LagoonTs.WaveHs(1:end-1)] + ...
+         LagoonTs.WaveHs + ...
+         [LagoonTs.WaveHs(2:end);LagoonTs.WaveHs(end);]) / 3;
+    
     WaveFig.FigureH = figure('Position',[100, 700, 648, 200],...
                              'Name','Significant wave height');
     WaveFig.LineH = plot(LagoonTs.DateTime, LagoonTs.WaveHs, 'b-');
@@ -99,8 +163,9 @@ if PlotWave
     hold off
     ylabel('Sig. wave height [m]')
     ylim([0,6])
+    set(WaveFig.AxesH, 'Position', [0.1, 0.1117, 0.87, 0.8133])
 else
-    WavePlot.cdata = 240 * ones(200, 648, 3, 'int8');
+    WavePlot.cdata = 255 * ones(200, 648, 3, 'int8');
 end
 
 %% generate channel plot ready to insert into movie
@@ -114,8 +179,7 @@ if PlotChannel
     hold off
     ylabel('Outlet channel length [m]')
     ylim([0,500])
-else
-    ChannelPlot.cdata = 240 * ones(200, 648, 3, 'int8');
+    set(ChannelFig.AxesH, 'Position', [0.1, 0.1117, 0.87, 0.8133])
 end
 
 %% Loop through timesteps and write video
@@ -173,9 +237,7 @@ for TimeNo = 1:1:NoOfFrames
     end
 
     % prep flow plot
-    if PlotFlow
-        CurrentQ = interp1(LagoonTs.DateTime, LagoonTs.Qin, ...
-                           TimeMatchedPhotos.UniqueTime(TimeNo));
+    if PlotQin
         if verLessThan('Matlab','9.1')
             xlim(FlowFig.AxesH, ...
                  datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
@@ -184,18 +246,30 @@ for TimeNo = 1:1:NoOfFrames
                  TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
         end
         datetick(FlowFig.AxesH,'x','ddmmm','keeplimits')
+        CurrentQin = interp1(LagoonTs.DateTime, LagoonTs.Qin, ...
+                             TimeMatchedPhotos.UniqueTime(TimeNo));
         set(FlowFig.PointH, ...
             'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
-            'YData', CurrentQ)
-        set(FlowFig.LabelH, ...
-            'String', sprintf('%0.1fm^3/s', CurrentQ))
+            'YData', CurrentQin)
+        if PlotQout
+            CurrentQout = interp1(LagoonTs.DateTime, LagoonTs.Qout, ...
+                                  TimeMatchedPhotos.UniqueTime(TimeNo));
+            set(FlowFig.QoutPointH, ...
+                'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
+                'YData', CurrentQout)
+            set(FlowFig.LabelH, ...
+                'String', sprintf('= %0.0f m^3/s\n= %0.0f m^3/s', ...
+                                  CurrentQin, CurrentQout))
+        else
+            set(FlowFig.LabelH, ...
+                'String', sprintf('River flow = %0.0f m^3/s', CurrentQin))
+        end
+        
         FlowPlot = getframe(FlowFig.FigureH);
     end
 
     % prep level plot
     if PlotLevel
-        CurrentWL = interp1(LagoonTs.DateTime, LagoonTs.WL, ...
-                            TimeMatchedPhotos.UniqueTime(TimeNo));
         if verLessThan('Matlab','9.1')
             xlim(LevelFig.AxesH, ...
                  datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
@@ -204,9 +278,18 @@ for TimeNo = 1:1:NoOfFrames
                  TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
         end
         datetick(LevelFig.AxesH,'x','ddmmm','keeplimits')
+        CurrentWL = interp1(LagoonTs.DateTime, LagoonTs.WL, ...
+                            TimeMatchedPhotos.UniqueTime(TimeNo));
         set(LevelFig.PointH, ...
             'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
             'YData', CurrentWL)
+        if PlotTide
+            CurrentTide = interp1(LagoonTs.DateTime, LagoonTs.SeaLevel, ...
+                                  TimeMatchedPhotos.UniqueTime(TimeNo));
+            set(LevelFig.TidePointH, ...
+                'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
+                'YData', CurrentTide)
+        end
         LevelPlot = getframe(LevelFig.FigureH);
     end
 
@@ -247,11 +330,19 @@ for TimeNo = 1:1:NoOfFrames
     end
 
     % insert plots into frame
-    if PlotFlow || PlotLevel
-        frame = [frame; ...
-                 FlowPlot.cdata, LevelPlot.cdata];
-    end
-    if PlotWave || PlotChannel
+    if PlotQin || PlotLevel
+        if PlotChannel
+            frame = [frame; ...
+                     FlowPlot.cdata, LevelPlot.cdata; ...
+                     WavePlot.cdata, ChannelPlot.cdata];
+        elseif PlotWave && ~PlotChannel
+            frame = [frame; ...
+                     [FlowPlot.cdata; WavePlot.cdata], LevelPlot.cdata];
+        elseif ~PlotWave && ~PlotChannel
+            frame = [frame; ...
+                     FlowPlot.cdata, LevelPlot.cdata];
+        end
+    elseif PlotWave || PlotChannel
         frame = [frame; ...
                  WavePlot.cdata, ChannelPlot.cdata];
     end
@@ -267,7 +358,7 @@ close(writerObj);
 if PlotLevel
     close(LevelFig.FigureH)
 end
-if PlotFlow
+if PlotQin
     close(FlowFig.FigureH)
 end
 if PlotWave
