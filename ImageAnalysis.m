@@ -203,9 +203,12 @@ clear WetBdySize
 %% Extract cross-section barrier backshore position
 
 % create column in ShortlistPhotos table to hold outputs if not already present
+% note: allows up to 5 intersection points per transect
+MaxIntersections = 5;
 if ~any(strcmp('Offsets', ShortlistPhotos.Properties.VariableNames))
     ShortlistPhotos.Offsets = nan(size(ShortlistPhotos,1), ...
-                                  size(Config.Transects,1));
+                                  size(Config.Transects,1), ...
+                                  MaxIntersections);
 end
 
 % only process timesteps which pass quality checks
@@ -213,7 +216,8 @@ TimesToProcess = ShortlistPhotos.TwistOK & ShortlistPhotos.WetBdyOK;
 
 % Calculate the offsets for all times and transects
 [ShortlistPhotos.Offsets(TimesToProcess,:)] = ...
-    measureLagoonWidth(ShortlistPhotos(TimesToProcess,:), Config.Transects, false);
+    measureLagoonWidth(ShortlistPhotos(TimesToProcess,:), ...
+                       Config.Transects, false);
 
 % tidy up
 clear TimesToProcess

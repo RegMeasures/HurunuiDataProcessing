@@ -15,9 +15,9 @@ fprintf(['Calculating transect offsets to waters edge.\n', ...
         repmat('.',1,min(70,NoToProcess)));
     
 % Calculate offsets
-parfor ii = 1:NoToProcess
+for ii = 1:NoToProcess
     if ~isempty(WetBdy{ii})
-        Offsets(ii,:) = measureOffsets(WetBdy{ii}, Transects, DiagPlot, [])';
+        Offsets(ii,:,:) = measureOffsets(WetBdy{ii}, Transects, DiagPlot, []);
     end
     
     % Display approx progress
