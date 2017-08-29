@@ -54,7 +54,7 @@ else
                      :);
         for ColNo = 1:NoOfCols
             if isnan(Position(PointNo,ColNo))
-                Proportion(PointNo) = 0;
+                Proportion(PointNo,ColNo) = 0;
             else
                 SeperationDist = min(abs(ThisWindowPos - Position(PointNo,ColNo)),[],2,'omitnan');
                 Proportion(PointNo,ColNo) = ...

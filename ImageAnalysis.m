@@ -227,33 +227,40 @@ clear TimesToProcess
 % calculate proportion of surrounding points within threshold tolerance
 ShortlistPhotos.OffsetOK = nan(size(ShortlistPhotos.Offsets));
 OffsetOK = false(size(ShortlistPhotos.Offsets));
-WindowSize = 200;
-OffsetThreshold = 10;
-PropThreshold = 0.4;
+WindowSize = 100;
+OffsetThreshold = 6; % in metres
+PropThreshold = 0.5; % proportion which must be within threshold distance
 for TransectNo = 1:size(ShortlistPhotos.Offsets,2)
-    ProportionOK = propDistLT(ShortlistPhotos.Offsets(:,TransectNo,:), ...
+    ProportionOK = propDistLT(permute(ShortlistPhotos.Offsets(:,TransectNo,:), [1,3,2]), ...
                               WindowSize, OffsetThreshold, false);
 
-    OffsetOK(:,TransectNo) = ProportionOK > PropThreshold;
+    OffsetOK(:,TransectNo,:) = permute(ProportionOK > PropThreshold,[1,3,2]);
 end
 ShortlistPhotos.OffsetOK(OffsetOK) = ShortlistPhotos.Offsets(OffsetOK);
 
 clear WindowSize OffsetThreshold PropThreshold ProportionOK OffsetOK
 
 % plot the filtered Offset time series
-for TransectNo = 1:size(ShortlistPhotos.Offsets,2);
+for TransectNo = 1:13 %size(ShortlistPhotos.Offsets,2);
     figure('Position', [(ScrSz(3)/2)-660+10*(TransectNo-1), ...
                         ScrSz(4)/2-10*(TransectNo-1), 1200, 400],...
            'PaperOrientation', 'landscape');
-    plot(ShortlistPhotos.UniqueTime, permute(ShortlistPhotos.Offsets(:,TransectNo,:),[1,3,2]), 'rx', ...
-         ShortlistPhotos.UniqueTime, permute(ShortlistPhotos.OffsetOK(:,TransectNo,:),[1,3,2]), 'bx')
+    plot(ShortlistPhotos.UniqueTime, ...
+         permute(ShortlistPhotos.Offsets(:,TransectNo,:),[1,3,2]), ...
+         'x', 'color', [0.9,0.9,0.9], 'MarkerSize', 4)
+    hold on
+         plot(ShortlistPhotos.UniqueTime, ...
+              permute(ShortlistPhotos.OffsetOK(:,TransectNo,:),[1,3,2]), ...
+              'kx', 'MarkerSize', 6)
+    hold off
     title(sprintf('Transect %i',TransectNo))
     ylabel('Lagoon width (m)')
-    ylim([0,200])
+    ylim([0,250])
+    set(gca, 'YTick', 0:50:250)
     if TransectNo == 1
-        export_fig 'outputs\Offests.pdf' -pdf
+        export_fig 'outputs\Offsets.pdf' -pdf
     else
-        export_fig 'outputs\Offests.pdf' -pdf -append
+        export_fig 'outputs\Offsets.pdf' -pdf -append
     end
     close
 end
