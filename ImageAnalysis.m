@@ -174,7 +174,7 @@ PixelThreshold = 15;
 PropThreshold = 0.35;
 PropDistLT = propDistLT([ShortlistPhotos.Twist(:,1), ...
                          ShortlistPhotos.Twist(:,2)*2], ...
-                        WindowSize, PixelThreshold);
+                        WindowSize, PixelThreshold, true);
 
 ShortlistPhotos.TwistOK = PropDistLT > PropThreshold;
 
@@ -215,7 +215,7 @@ end
 TimesToProcess = ShortlistPhotos.TwistOK & ShortlistPhotos.WetBdyOK;
 
 % Calculate the offsets for all times and transects
-[ShortlistPhotos.Offsets(TimesToProcess,:)] = ...
+[ShortlistPhotos.Offsets(TimesToProcess,:,:)] = ...
     measureLagoonWidth(ShortlistPhotos(TimesToProcess,:), ...
                        Config.Transects, false);
 
@@ -228,11 +228,11 @@ clear TimesToProcess
 ShortlistPhotos.OffsetOK = nan(size(ShortlistPhotos.Offsets));
 OffsetOK = false(size(ShortlistPhotos.Offsets));
 WindowSize = 200;
-OffsetThreshold = 15;
-PropThreshold = 0.6;
+OffsetThreshold = 10;
+PropThreshold = 0.4;
 for TransectNo = 1:size(ShortlistPhotos.Offsets,2)
-    ProportionOK = propDistLT(ShortlistPhotos.Offsets(:,TransectNo), ...
-                              WindowSize, OffsetThreshold);
+    ProportionOK = propDistLT(ShortlistPhotos.Offsets(:,TransectNo,:), ...
+                              WindowSize, OffsetThreshold, false);
 
     OffsetOK(:,TransectNo) = ProportionOK > PropThreshold;
 end
@@ -245,10 +245,11 @@ for TransectNo = 1:size(ShortlistPhotos.Offsets,2);
     figure('Position', [(ScrSz(3)/2)-660+10*(TransectNo-1), ...
                         ScrSz(4)/2-10*(TransectNo-1), 1200, 400],...
            'PaperOrientation', 'landscape');
-    plot(ShortlistPhotos.UniqueTime, ShortlistPhotos.Offsets(:,TransectNo), 'rx', ...
-         ShortlistPhotos.UniqueTime, ShortlistPhotos.OffsetOK(:,TransectNo), 'bx')
+    plot(ShortlistPhotos.UniqueTime, permute(ShortlistPhotos.Offsets(:,TransectNo,:),[1,3,2]), 'rx', ...
+         ShortlistPhotos.UniqueTime, permute(ShortlistPhotos.OffsetOK(:,TransectNo,:),[1,3,2]), 'bx')
     title(sprintf('Transect %i',TransectNo))
-    ylabel('Offset to barrier backshore (m)')
+    ylabel('Lagoon width (m)')
+    ylim([0,200])
     if TransectNo == 1
         export_fig 'outputs\Offests.pdf' -pdf
     else

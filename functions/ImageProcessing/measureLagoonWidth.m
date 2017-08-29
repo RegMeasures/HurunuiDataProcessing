@@ -15,7 +15,7 @@ fprintf(['Calculating transect offsets to waters edge.\n', ...
         repmat('.',1,min(70,NoToProcess)));
     
 % Calculate offsets
-for ii = 1:NoToProcess
+parfor ii = 1:NoToProcess
     if ~isempty(WetBdy{ii})
         Offsets(ii,:,:) = measureOffsets(WetBdy{ii}, Transects, DiagPlot, []);
     end
@@ -28,6 +28,8 @@ end
 
 % Basic QA
 Offsets(Offsets > 300) = nan;
+
+fprintf(1,'Finished calculating offsets.\n');
 
 end
 
