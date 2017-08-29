@@ -1,21 +1,26 @@
-function [Twist,Edge] = MeasureTwist1(RGBimage,dispPlots)
+function [Twist,Edge] = MeasureTwist1(RGBimage,k,Resolution,dispPlots)
 %MEASURETWIST1   identify cliff edge in cam1 to inform pole twist correction
 %   
 %   [Twist,Edge] = MEASURESTWIST1(RGBimage,test)
-%
-%   RGBimage = Cam1 image i.e. imread('Hurunui1_*.jpg')
-%   test     = boolean, true = show plots (default = false)
-%   Twist    = diff in edge position of cliff to calibration image (pixels)
-%              [px across, px down]
-%   Edge     = optional output, absolute cliff edge position in pixels
-%              from LHside of image.
-%              [H_Edge,V_Edge]
+%   
+%   Inputs:
+%      RGBimage  = Cam1 image i.e. imread('Hurunui1_*.jpg')
+%      k         = k value for barrel distortion correction as used for 
+%                  lensdistort
+%      Resolution= Image size [width, height] (pixels)
+%      dispPlots = boolean, true = show plots (optional, default = false)
+%   Outputs:
+%      Twist     = diff in edge position of cliff to calibration image
+%                  [px across, px down]
+%      Edge      = optional output, absolute cliff edge position in pixels
+%                  from LHside of image.
+%                  [H_Edge,V_Edge]
 %
 %   See also: MeasureTwist2
 
 % set default dispPlots if not supplied 
 % (default is not to display diagnistics)
-if ~exist('dispPlots','var')
+if ~exist('dispPlots','var') || isempty(dispPlots)
     dispPlots = false;
 end
 
@@ -23,12 +28,12 @@ end
 
 % Edge position corresponding to Twist = 0 [px] 
 % note: these are based on Hurunui1_15-10-07_15-28-48-75.jpg
-H_CalibEdge = 2335;
+H_CalibEdge = 2329; %2335;
 V_CalibEdge = 153;
 
 % horizontal (cliff) search params
 H_XPixelMin = 2000; % horizontal search range for cliff edge [px]
-H_XPixelMax = 2400;
+H_XPixelMax = 2450;
 H_YPixel = 550;     % vert coord of horiz search line for cliff edge [px]
 H_YBand = 20;        % search band thickness for cliff edge search [px]
 H_dSVthresh = 2e-4;% initial dHSV threshold
@@ -41,7 +46,6 @@ V_YPixelMax  = 200;
 V_XBand      = 20;
 V_FilterRadius = 5;
 V_dGrayThresh = 5;
-
 
 % secondary/fine search parameters
 %FineSearchMin = 0; 
@@ -85,8 +89,10 @@ while dSV(H_Edge+1) > dSV(H_Edge) && H_Edge <= H_EdgeIni +FineSearchMax
     H_Edge = H_Edge+1;
 end
 
-% apply relevant offsets to identified edge
+% apply relevant offset to identified edge
 H_Edge = H_Edge + H_XPixelMin - 1;
+
+% initial twist calculation with no accounting for lens distortion
 H_Twist = H_Edge - H_CalibEdge;
 
 %% identify horizon edge
@@ -125,7 +131,34 @@ dGray = abs(GrayLine(1:end-1)-GrayLine(2:end));
 
 % apply relevant offsets to identified edge
 V_Edge = V_Edge + V_YPixelMin - 1;
-V_Twist =  V_CalibEdge - V_Edge;
+
+% Original twist calculation with no accounting for lens distortion
+V_Twist =  V_Edge - V_CalibEdge;
+
+%% Calculate Twist accounting for lens distortion
+
+% horizontal
+[H_CalibEdge2, ~] = radialdistort(H_CalibEdge - (Resolution(1)+1)/2, ...
+                                  H_YPixel - (Resolution(2)+1)/2, ...
+                                  k, Resolution);
+[H_Edge2, ~] = radialdistort(H_Edge - (Resolution(1)+1)/2, ...
+                             H_YPixel - (Resolution(2)+1)/2, ...
+                             k, Resolution);
+H_Twist2 = round(H_Edge2 - H_CalibEdge2);
+
+% vertical
+[~, V_CalibEdge2] = radialdistort(V_XPixel+H_Twist - (Resolution(1)+1)/2, ...
+                                  V_CalibEdge - (Resolution(2)+1)/2, ...
+                                  k, Resolution);
+[~, V_Edge2] = radialdistort(V_XPixel+H_Twist - (Resolution(1)+1)/2, ...
+                             V_Edge - (Resolution(2)+1)/2, ...
+                             k, Resolution);
+V_Twist2 =  round(V_Edge2 - V_CalibEdge2);
+
+% Assemble final outputs
+Edge = [H_Edge,V_Edge];
+%Twist = [H_Twist,V_Twist];
+Twist = [H_Twist2,V_Twist2];
 
 %% Test plots
 if dispPlots
@@ -181,16 +214,16 @@ if dispPlots
     plot([H_XPixelMin,H_XPixelMax],[H_YPixel,H_YPixel],'r-')
     plot([H_XPixelMin,H_XPixelMax],[H_YPixel-H_YBand,H_YPixel-H_YBand],'r:')
     plot([H_XPixelMin,H_XPixelMax],[H_YPixel+H_YBand,H_YPixel+H_YBand],'r:')
-    plot([H_Edge,H_Edge],[H_YPixel-40,H_YPixel+40],'r-')
+    plot([H_Edge,H_Edge],[H_YPixel-40,H_YPixel+40],'g-')
+    plot([H_CalibEdge,H_CalibEdge],[H_YPixel-40,H_YPixel+40],'r-')
     % horizon
     plot([V_XPixel+H_Twist,V_XPixel+H_Twist],[V_YPixelMin,V_YPixelMax],'r-')
     plot([V_XPixel+H_Twist-V_XBand,V_XPixel+H_Twist-V_XBand],[V_YPixelMin,V_YPixelMax],'r:')
     plot([V_XPixel+H_Twist+V_XBand,V_XPixel+H_Twist+V_XBand],[V_YPixelMin,V_YPixelMax],'r:')
-    plot([V_XPixel+H_Twist-40,V_XPixel+H_Twist+40],[V_Edge,V_Edge],'r-')
+    plot([V_XPixel+H_Twist-40,V_XPixel+H_Twist+40],[V_Edge,V_Edge],'g-')
+    plot([V_XPixel+H_Twist-40,V_XPixel+H_Twist+40],[V_CalibEdge,V_CalibEdge],'r-')
 end
 
-Edge = [H_Edge,V_Edge];
-Twist = [H_Twist,V_Twist];
 end
 
 

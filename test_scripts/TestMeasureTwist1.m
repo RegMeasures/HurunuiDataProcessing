@@ -7,7 +7,10 @@ TestFiles = {'E:\Hurunui\PhotoRecord\ImageStore\2015\10\Hurunui1\Hurunui1_15-10-
              'E:\Hurunui\PhotoRecord\ImageStore\2016\10\Hurunui1\Hurunui1_16-10-01_07-31-52-74.jpg';...
              'E:\Hurunui\PhotoRecord\ImageStore\2016\03\Hurunui1\Hurunui1_16-03-01_07-07-32-37.jpg';...
              'E:\Hurunui\PhotoRecord\ImageStore\2016\03\Hurunui1\Hurunui1_16-03-01_10-52-32-92.jpg'};
-         
+
+k          = +0.240;           % k value for barrel distortion correction as used for lensdistort
+Resolution = [2592,1944];      % Image size [across,down] (pixels)
+
 for ImageNo = 1:length(TestFiles)
     TestImage = imread(TestFiles{ImageNo});
     
@@ -24,7 +27,7 @@ for ImageNo = 1:length(TestFiles)
 %          'units','pixels','HorizontalAlignment','left',...
 %          'BackgroundColor','w');
                   
-    [Twist,Edge] = MeasureTwist1(TestImage,true)
+    [Twist,Edge] = MeasureTwist1(TestImage,k,Resolution,true)
     
 %     CorrectedImage = imtranslate(TestImage,-Twist,'FillValues',nan(3,1));
 %     figure

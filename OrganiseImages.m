@@ -2,9 +2,9 @@
 
 %ImageDump = 'H:\Hapua\Individual_Hapua\Hurunui\PhotoRecord\HighRes'; % move images from here
 %ImageDump = 'H:\Hapua\Individual_Hapua\Hurunui\PhotoRecord\Camera 2';
-ImageDump = 'C:\Projects\Hurunui\Photos2017-05-24';
+ImageDump = 'C:\Users\measuresrj\OneDrive - NIWA\pics';
 
-ImageStore = 'H:\Hapua\Individual_Hapua\Hurunui\PhotoRecord\ImageStore'; % store organised images here
+ImageStore = 'C:\Users\measuresrj\OneDrive - NIWA\Hapua\Hurunui\PhotoRecord\ImageStore'; % store organised images here
 
 CreateCopy = true; % true = copy, false = move
 

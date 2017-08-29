@@ -35,7 +35,7 @@ CellTwist = mat2cell(Twist,ones(NoOfPhotos,1));
 
 %% Loop through days
 
-% start parralel pool
+% start parallel pool
 if isempty(gcp('nocreate'))
     numCores = feature('numcores');
     parpool(numCores);
@@ -61,7 +61,8 @@ parfor PhotoNo = 1:NoOfPhotos
 
         % calculate twist if required (only works for cam1 at present!)
         if any(isnan(CellTwist{PhotoNo}))
-            CellTwist{PhotoNo} = MeasureTwist1(PhotoRgb);
+            CellTwist{PhotoNo} = MeasureTwist1(PhotoRgb, Cam.k, ...
+                                               Cam.Resolution);
         end
 
         % find wet edges, project, and clean

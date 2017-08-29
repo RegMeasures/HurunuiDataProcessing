@@ -1,11 +1,10 @@
 function Config = HurunuiAnalysisConfig()
 %HURUNUIANALYSISCONFIG Setup ready to run analysis scripts
-%   Config = HurunuiAnalysisConfig
+%   Config = HURUNUIANALYSISCONFIG
 
 %% Data file locations
 
 % Main data drive/folder
-%Config.DataFolder = 'H:\Hapua\Individual_Hapua\Hurunui';
 %Config.DataFolder = '\\engcad4\GISdump\Richard\';
 %Config.DataFolder = 'E:\Hurunui';
 Config.DataFolder = fullfile(getenv('USERPROFILE'),'OneDrive - NIWA',...
@@ -76,9 +75,9 @@ Config.StandardWL = 1.5;
 
 %% Spatial parameters
 % Transect lines
-TransectShp = '100mTransects_NZTM';
+TransectShp = '100mTransects_NZTM_clipped';
 Transects = m_shaperead(TransectShp);
-Config.Transects = cellfun(@flipud, Transects.ncst(23:39), ...
+Config.Transects = cellfun(@flipud, Transects.ncst, ...
                            'UniformOutput', false);
 clear TransectShp Transects
 

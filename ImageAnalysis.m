@@ -26,17 +26,17 @@ Photos = AllPhotos(CaptureMins==30 | CaptureMins==0,:);
 
 clear AllPhotos
 
-%% Load previously calculated metrics to avoid duplication of effort
-PhotosPrevious = load('outputs\PhotoDatabase.mat');
-PhotosPrevious = PhotosPrevious.Photos;
-
 %% Generate quality metrics and assess quality
 
-% generate metrics
+% generate metrics from scratch
 Photos = photoQuality(fullfile(Config.DataFolder,Config.PhotoFolder), ...
-                      Photos,PhotosPrevious);
+                      Photos);
+                  
+% Or alternatively re-use previously calculated metrics to avoid duplication of effort
+%PhotosPrevious = load('outputs\PhotoDatabase.mat');
+%PhotosPrevious = PhotosPrevious.Photos;
 %Photos = photoQuality(fullfile(Config.DataFolder,Config.PhotoFolder), ...
-%                      Photos);
+%                      Photos,PhotosPrevious);
 
 % assess quality
 Photos.QualityOk = Photos.Sharpness > Config.SharpThresh & ...
@@ -94,7 +94,7 @@ end
 ShortlistPhotos = ShortlistPhotos(~isnan(ShortlistPhotos.Cam1Photo) & ...
                                   ~isnan(ShortlistPhotos.Cam2Photo), :);
 
-%% Loop through images and extract waters edge
+%% Loop through images, measure twist and extract waters edge
 
 NoToProcess = size(ShortlistPhotos,1);
 
@@ -174,7 +174,7 @@ PixelThreshold = 15;
 PropThreshold = 0.35;
 PropDistLT = propDistLT([ShortlistPhotos.Twist(:,1), ...
                          ShortlistPhotos.Twist(:,2)*2], ...
-                        WindowSize, PixelThreshold);
+                        WindowSize, PixelThreshold, true);
 
 ShortlistPhotos.TwistOK = PropDistLT > PropThreshold;
 
@@ -203,17 +203,21 @@ clear WetBdySize
 %% Extract cross-section barrier backshore position
 
 % create column in ShortlistPhotos table to hold outputs if not already present
+% note: allows up to 5 intersection points per transect
+MaxIntersections = 5;
 if ~any(strcmp('Offsets', ShortlistPhotos.Properties.VariableNames))
     ShortlistPhotos.Offsets = nan(size(ShortlistPhotos,1), ...
-                                  size(Config.Transects,1));
+                                  size(Config.Transects,1), ...
+                                  MaxIntersections);
 end
 
 % only process timesteps which pass quality checks
 TimesToProcess = ShortlistPhotos.TwistOK & ShortlistPhotos.WetBdyOK;
 
 % Calculate the offsets for all times and transects
-[ShortlistPhotos.Offsets(TimesToProcess,:)] = ...
-    measureLagoonWidth(ShortlistPhotos(TimesToProcess,:), Config.Transects, false);
+[ShortlistPhotos.Offsets(TimesToProcess,:,:)] = ...
+    measureLagoonWidth(ShortlistPhotos(TimesToProcess,:), ...
+                       Config.Transects, false);
 
 % tidy up
 clear TimesToProcess
@@ -223,32 +227,40 @@ clear TimesToProcess
 % calculate proportion of surrounding points within threshold tolerance
 ShortlistPhotos.OffsetOK = nan(size(ShortlistPhotos.Offsets));
 OffsetOK = false(size(ShortlistPhotos.Offsets));
-WindowSize = 200;
-OffsetThreshold = 15;
-PropThreshold = 0.6;
+WindowSize = 100;
+OffsetThreshold = 6; % in metres
+PropThreshold = 0.5; % proportion which must be within threshold distance
 for TransectNo = 1:size(ShortlistPhotos.Offsets,2)
-    ProportionOK = propDistLT(ShortlistPhotos.Offsets(:,TransectNo), ...
-                              WindowSize, OffsetThreshold);
+    ProportionOK = propDistLT(permute(ShortlistPhotos.Offsets(:,TransectNo,:), [1,3,2]), ...
+                              WindowSize, OffsetThreshold, false);
 
-    OffsetOK(:,TransectNo) = ProportionOK > PropThreshold;
+    OffsetOK(:,TransectNo,:) = permute(ProportionOK > PropThreshold,[1,3,2]);
 end
 ShortlistPhotos.OffsetOK(OffsetOK) = ShortlistPhotos.Offsets(OffsetOK);
 
 clear WindowSize OffsetThreshold PropThreshold ProportionOK OffsetOK
 
 % plot the filtered Offset time series
-for TransectNo = 1:size(ShortlistPhotos.Offsets,2);
+for TransectNo = 1:13 %size(ShortlistPhotos.Offsets,2);
     figure('Position', [(ScrSz(3)/2)-660+10*(TransectNo-1), ...
                         ScrSz(4)/2-10*(TransectNo-1), 1200, 400],...
            'PaperOrientation', 'landscape');
-    plot(ShortlistPhotos.UniqueTime, ShortlistPhotos.Offsets(:,TransectNo), 'rx', ...
-         ShortlistPhotos.UniqueTime, ShortlistPhotos.OffsetOK(:,TransectNo), 'bx')
+    plot(ShortlistPhotos.UniqueTime, ...
+         permute(ShortlistPhotos.Offsets(:,TransectNo,:),[1,3,2]), ...
+         'x', 'color', [0.9,0.9,0.9], 'MarkerSize', 4)
+    hold on
+         plot(ShortlistPhotos.UniqueTime, ...
+              permute(ShortlistPhotos.OffsetOK(:,TransectNo,:),[1,3,2]), ...
+              'kx', 'MarkerSize', 6)
+    hold off
     title(sprintf('Transect %i',TransectNo))
-    ylabel('Offset to barrier backshore (m)')
+    ylabel('Lagoon width (m)')
+    ylim([0,250])
+    set(gca, 'YTick', 0:50:250)
     if TransectNo == 1
-        export_fig 'outputs\Offests.pdf' -pdf
+        export_fig 'outputs\Offsets.pdf' -pdf
     else
-        export_fig 'outputs\Offests.pdf' -pdf -append
+        export_fig 'outputs\Offsets.pdf' -pdf -append
     end
     close
 end
