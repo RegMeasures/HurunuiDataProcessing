@@ -35,10 +35,15 @@ CellTwist = mat2cell(Twist,ones(NoOfPhotos,1));
 
 %% Loop through days
 
-% start parallel pool
-if isempty(gcp('nocreate'))
-    numCores = feature('numcores');
-    parpool(numCores);
+% start parrallel pool (if license available)
+if license('test','Distrib_Computing_Toolbox')
+    if isempty(gcp('nocreate'))
+        numCores = feature('numcores');
+        parpool(numCores);
+    end
+else
+    fprintf(['No license for Matlab parallel computing toolbox ',...
+             'available. Single-core processing only.\n'])
 end
 
 % set up progress reporting as this loop can be slow
@@ -70,7 +75,7 @@ parfor PhotoNo = 1:NoOfPhotos
             [~, WetBdyPx] = WetDry2(PhotoRgb, FgBgMask, SeedPixel, CellTwist{PhotoNo});
             [BdyEast, BdyNorth] = ProjectToMap(Cam, WL(PhotoNo), CellTwist{PhotoNo}, WetBdyPx(:,1), WetBdyPx(:,2));
             WetBdy{PhotoNo} = [BdyEast, BdyNorth];
-            [WetBdy{PhotoNo}] = cleanWetBdy(WetBdy{PhotoNo})
+            [WetBdy{PhotoNo}] = cleanWetBdy(WetBdy{PhotoNo});
         end
     end
 end

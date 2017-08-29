@@ -98,7 +98,8 @@ H_Twist = H_Edge - H_CalibEdge;
 %% identify horizon edge
 
 % extract vertical search zone
-RGBclip = RGBimage(V_YPixelMin:V_YPixelMax,V_XPixel+H_Twist-V_XBand:V_XPixel+H_Twist+V_XBand,:);
+RGBclip = RGBimage(V_YPixelMin:V_YPixelMax, ...
+                   V_XPixel+H_Twist-V_XBand:min(V_XPixel+H_Twist+V_XBand,end),:);
 
 % convert to grayscale
 GrayClip = rgb2gray(RGBclip);
