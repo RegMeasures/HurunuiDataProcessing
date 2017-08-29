@@ -6,15 +6,17 @@ function [Offsets, PlotHs] = measureOffsets(WetBdy, Transects, DiagPlot, AX)
 %   [Offsets, PlotHs] = measureOffsets(WetBdy, Transects, true)
 %      Produce diagnostic plot and return handles to plotted line data.
 
+MaxIntersections = 5;
+
 if ~exist('DiagPlot','var') || isempty(DiagPlot)
     DiagPlot = false;
 end
 
-if DiagPlot && ~exist('AX','var') || isempty(AX)
+if DiagPlot && (~exist('AX','var') || isempty(AX))
     AX = gca;
 end
 
-Offsets = nan(size(Transects));
+Offsets = nan(1,size(Transects,1), MaxIntersections);
 
 % Find offset to lagoon edge for each transect
 for TranNo = 1:size(Transects)
@@ -31,8 +33,14 @@ for TranNo = 1:size(Transects)
     
     % if they cross then calc offset to outermost crossing
     if ~isempty(Xint)
-        Offsets(TranNo) = max(sqrt((Xint - Transects{TranNo}(1,1)).^2 + ...
-                                   (Yint - Transects{TranNo}(1,2)).^2));
+        CrossingDist = sort(sqrt((Xint - Transects{TranNo}(1,1)).^2 + ...
+                                 (Yint - Transects{TranNo}(1,2)).^2), ...
+                            1, 'descend');
+        Offsets(1, TranNo, 1:min(MaxIntersections, ...
+                                 size(CrossingDist,1))) = ...
+            permute(CrossingDist(1:min(MaxIntersections, ...
+                                       size(CrossingDist,1))), ...
+            [3,2,1]);
     end
 end
 
@@ -49,10 +57,10 @@ if DiagPlot
                           (Transects{TranNo}(2,2) - Transects{TranNo}(1,2)).^2);
         plotX = Transects{TranNo}(1,1) + ...
                 (Transects{TranNo}(2,1) - Transects{TranNo}(1,1)) * ...
-                (Offsets(TranNo)/LineLength);
+                (permute(Offsets(1,TranNo,:),[2,3,1])/LineLength);
         plotY = Transects{TranNo}(1,2) + ...
                 (Transects{TranNo}(2,2) - Transects{TranNo}(1,2)) * ...
-                (Offsets(TranNo)/LineLength);
+                (permute(Offsets(1,TranNo,:),[2,3,1])/LineLength);
         Line4 = plot(AX,plotX,plotY,'ro','MarkerFaceColor','r');
         PlotHs = [Line1;Line2;Line3;Line4];
     end
