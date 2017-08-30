@@ -69,17 +69,18 @@ if PlotQin
     FlowFig.LineH = plot(LagoonTs.DateTime, LagoonTs.Qin, 'b-');
     FlowFig.AxesH = gca;
     hold on
-    FlowFig.PointH = plot(FlowFig.AxesH, LagoonTs.DateTime(end), ...
-                          LagoonTs.Qin(end), 'b.', 'MarkerSize',15);
+%     FlowFig.PointH = plot(FlowFig.AxesH, LagoonTs.DateTime(end), ...
+%                           LagoonTs.Qin(end), 'b.', 'MarkerSize',15);
     if PlotQout
         FlowFig.QoutLineH = plot(FlowFig.AxesH, LagoonTs.DateTime, ...
                                  LagoonTs.Qout, 'c-');
-        FlowFig.QoutPointH = plot(FlowFig.AxesH, LagoonTs.DateTime(end), ...
-                                  LagoonTs.Qout(end), 'c.', 'MarkerSize',15);
-        legend([FlowFig.QoutLineH,FlowFig.LineH], ...
+%         FlowFig.QoutPointH = plot(FlowFig.AxesH, LagoonTs.DateTime(end), ...
+%                                   LagoonTs.Qout(end), 'c.', 'MarkerSize',15);
+        FlowFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[0,200],'k-');
+        legend([FlowFig.LineH,FlowFig.QoutLineH], ...
                {'River flow','Lagoon outflow'}, ...
                'Location', 'NorthWest')
-        legend('boxoff')
+%         legend('boxoff')
 %         [~, ScalingFac] = absolutePixelPos([0,0,145,135]);
 %         FlowFig.LabelH = text(145 * ScalingFac(1), 135 * ScalingFac(2), ...
 %                               sprintf('= %0.0f m^3/s\n= %0.0f m^3/s', ...
@@ -98,7 +99,8 @@ if PlotQin
     hold off
     ylabel('Flow rate [m^3/s]')
     ylim([0,200])
-    set(FlowFig.AxesH, 'Position', [0.1, 0.1117, 0.87, 0.8133])
+    Pos = get(FlowFig.AxesH, 'Position');
+    set(FlowFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
 else
     FlowPlot.cdata = 255 * ones(200, 648, 3, 'int8');
 end
@@ -116,25 +118,28 @@ if PlotLevel
     LevelFig.LineH = plot(LagoonTs.DateTime, LagoonTs.WL, 'b-');
     LevelFig.AxesH = gca;
     hold on
-    LevelFig.PointH = plot(LevelFig.AxesH, LagoonTs.DateTime(end), ...
-                           LagoonTs.WL(end), 'b.', 'MarkerSize',15);
-    
+%     LevelFig.PointH = plot(LevelFig.AxesH, LagoonTs.DateTime(end), ...
+%                            LagoonTs.WL(end), 'b.', 'MarkerSize',15);
+    LevelFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[-1.0,3.5],'k-');
+                       
     if PlotTide
         % Add in tide plot
         LevelFig.TideLineH = plot(LevelFig.AxesH, LagoonTs.DateTime, ...
                                   LagoonTs.SeaLevel, 'c-');
-        LevelFig.TidePointH = plot(LevelFig.AxesH, LagoonTs.DateTime(end), ...
-                                   LagoonTs.SeaLevel(end), 'c.', 'MarkerSize',15);
+%         LevelFig.TidePointH = plot(LevelFig.AxesH, LagoonTs.DateTime(end), ...
+%                                    LagoonTs.SeaLevel(end), 'c.', 'MarkerSize',15);
         ylabel('Water level [m]')
         ylim([-1.0,3.5])
         legend([LevelFig.LineH,LevelFig.TideLineH], ...
                {'Lagoon level','SeaLevel'}, ...
                'Location', 'NorthWest')
-        set(LevelFig.AxesH, 'Position', [0.1, 0.1100, 0.87, 0.8150])
+        Pos = get(LevelFig.AxesH, 'Position');
+        set(LevelFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
     else
         ylabel('Lagoon level [m]')
         ylim([0.5,3.5])
-        set(LevelFig.AxesH, 'Position', [0.1, 0.1117, 0.87, 0.8133])
+        Pos = get(LevelFig.AxesH, 'Position');
+        set(LevelFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
     end
     
     hold off
@@ -160,11 +165,13 @@ if PlotWave
     WaveFig.LineH = plot(LagoonTs.DateTime, LagoonTs.WaveHs, 'b-');
     WaveFig.AxesH = gca;
     hold on
-    WaveFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.WaveHs(end), 'r.', 'MarkerSize',15);
+    % WaveFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.WaveHs(end), 'r.', 'MarkerSize',15);
+    WaveFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[0,6],'k-');
     hold off
     ylabel('Sig. wave height [m]')
     ylim([0,6])
-    set(WaveFig.AxesH, 'Position', [0.1, 0.1117, 0.87, 0.8133])
+    Pos = get(WaveFig.AxesH, 'Position');
+    set(WaveFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
 else
     WavePlot.cdata = 255 * ones(200, 648, 3, 'int8');
 end
@@ -176,11 +183,13 @@ if PlotChannel
     ChannelFig.LineH = plot(LagoonTs.DateTime, LagoonTs.ChannelL, 'b-');
     ChannelFig.AxesH = gca;
     hold on
-    ChannelFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.ChannelL(end), 'r.', 'MarkerSize',15);
+    % ChannelFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.ChannelL(end), 'r.', 'MarkerSize',15);
+    ChannelFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[0,500],'k-');
     hold off
     ylabel('Outlet channel length [m]')
     ylim([0,500])
-    set(ChannelFig.AxesH, 'Position', [0.1, 0.1117, 0.87, 0.8133])
+    Pos = get(ChannelFig.AxesH, 'Position');
+    set(ChannelFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
 end
 
 %% Loop through timesteps and write video
@@ -249,15 +258,17 @@ for TimeNo = 1:1:NoOfFrames
         datetick(FlowFig.AxesH,'x','ddmmm','keeplimits')
         CurrentQin = interp1(LagoonTs.DateTime, LagoonTs.Qin, ...
                              TimeMatchedPhotos.UniqueTime(TimeNo));
-        set(FlowFig.PointH, ...
-            'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
-            'YData', CurrentQin)
+%         set(FlowFig.PointH, ...
+%             'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
+%             'YData', CurrentQin)
         if PlotQout
             CurrentQout = interp1(LagoonTs.DateTime, LagoonTs.Qout, ...
                                   TimeMatchedPhotos.UniqueTime(TimeNo));
-            set(FlowFig.QoutPointH, ...
-                'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
-                'YData', CurrentQout)
+%             set(FlowFig.QoutPointH, ...
+%                 'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
+%                 'YData', CurrentQout)
+            set(FlowFig.TimeLineH, ...
+                'XData', TimeMatchedPhotos.UniqueTime([TimeNo,TimeNo]));
 %             set(FlowFig.LabelH, ...
 %                 'String', sprintf('= %0.0f m^3/s\n= %0.0f m^3/s', ...
 %                                   CurrentQin, CurrentQout))
@@ -281,15 +292,17 @@ for TimeNo = 1:1:NoOfFrames
         datetick(LevelFig.AxesH,'x','ddmmm','keeplimits')
         CurrentWL = interp1(LagoonTs.DateTime, LagoonTs.WL, ...
                             TimeMatchedPhotos.UniqueTime(TimeNo));
-        set(LevelFig.PointH, ...
-            'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
-            'YData', CurrentWL)
+%         set(LevelFig.PointH, ...
+%             'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
+%             'YData', CurrentWL)
+        set(LevelFig.TimeLineH, ...
+            'XData', TimeMatchedPhotos.UniqueTime([TimeNo,TimeNo]));
         if PlotTide
             CurrentTide = interp1(LagoonTs.DateTime, LagoonTs.SeaLevel, ...
                                   TimeMatchedPhotos.UniqueTime(TimeNo));
-            set(LevelFig.TidePointH, ...
-                'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
-                'YData', CurrentTide)
+%             set(LevelFig.TidePointH, ...
+%                 'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
+%                 'YData', CurrentTide)
         end
         LevelPlot = getframe(LevelFig.FigureH);
     end
@@ -306,9 +319,11 @@ for TimeNo = 1:1:NoOfFrames
                  TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
         end
         datetick(WaveFig.AxesH,'x','ddmmm','keeplimits')
-        set(WaveFig.PointH, ...
-            'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
-            'YData', CurrentHs)
+%         set(WaveFig.PointH, ...
+%             'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
+%             'YData', CurrentHs)
+        set(WaveFig.TimeLineH, ...
+            'XData', TimeMatchedPhotos.UniqueTime([TimeNo,TimeNo]));
         WavePlot = getframe(WaveFig.FigureH);
     end
 
@@ -324,9 +339,11 @@ for TimeNo = 1:1:NoOfFrames
                  datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
         end
         datetick(ChannelFig.AxesH,'x','ddmmm','keeplimits')
-        set(ChannelFig.PointH, ...
-            'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
-            'YData', CurrentChannelLength)
+%         set(ChannelFig.PointH, ...
+%             'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
+%             'YData', CurrentChannelLength)
+        set(ChannelFig.TimeLineH, ...
+            'XData', TimeMatchedPhotos.UniqueTime([TimeNo,TimeNo]));
         ChannelPlot = getframe(ChannelFig.FigureH);
     end
 
