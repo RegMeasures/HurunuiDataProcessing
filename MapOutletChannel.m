@@ -1,3 +1,16 @@
+%% Setup
+
+% Add required directories (and subdirectories)
+addpath(genpath('functions'))
+addpath(genpath('inputs'))
+
+% Read input parameters
+Config = HurunuiAnalysisConfig;
+
+%% Digitise outlet channel position
+load('outputs\StdTidePhotos.mat')
+
+ChannelPos.UniqueTime = StdTidePhotos.UniqueTime;
 ChannelPos.LinePx = cell(size(StdTidePhotos,1),1);
 ChannelPos.LineXY = cell(size(StdTidePhotos,1),1);
 for TimeNo = 1:size(StdTidePhotos,1)
@@ -40,6 +53,50 @@ for TimeNo = 1:size(StdTidePhotos,1)
 %     plot(ChannelEasting,ChannelNorthing,'r-x')
 
 end
-ChannelPos.UniqueTime = StdTidePhotos.UniqueTime;
 ChannelPos = struct2table(ChannelPos);
 save('outputs\ChannelPos.mat','ChannelPos','-v7.3')
+
+%% Calculate upstream and downstream offset alongshore
+
+% upstream and downstream position
+ChannelPos.UsPos = nan(size(ChannelPos,1),2);
+ChannelPos.DsPos = nan(size(ChannelPos,1),2);
+EdgeTol = 50;
+for TimeNo = 1:size(ChannelPos,1);
+    if ~isempty(ChannelPos.LinePx{TimeNo})
+        % channel start position
+%         if ChannelPos.LinePx{TimeNo}(1,1) > Config.Cam2.Resolution(1) - EdgeTol && ...
+%                ChannelPos.LinePx{TimeNo}(1,1) < Config.Cam2.Resolution(1) + EdgeTol
+            % start is in the blind spot
+        ChannelPos.UsPos(TimeNo,:) = ChannelPos.LineXY{TimeNo}(1,:);
+        
+        % channel end position
+        if ~(ChannelPos.LinePx{TimeNo}(end,1) > Config.Cam2.Resolution(1) - EdgeTol && ...
+             ChannelPos.LinePx{TimeNo}(end,1) < Config.Cam2.Resolution(1) + EdgeTol)
+            % end is not in the blind spot
+            ChannelPos.DsPos(TimeNo,:) = ChannelPos.LineXY{TimeNo}(end,:);
+        end
+    end
+end
+
+% transformation inputs
+RelShore = Config.Shoreline(2,:)-Config.Shoreline(1,:);
+ShoreAng = atan(RelShore(2)/RelShore(1));
+clear RelShore
+
+% upstream offset
+PosRelative = ChannelPos.UsPos - repmat(Config.Shoreline(1,:),size(ChannelPos,1),1);
+ChannelPos.UsOffset = PosRelative(:,1) * cos(ShoreAng) + ...
+                          PosRelative(:,2) * sin(ShoreAng);
+
+% downstream offset
+PosRelative = ChannelPos.DsPos - repmat(Config.Shoreline(1,:),size(ChannelPos,1),1);
+ChannelPos.DsOffset = PosRelative(:,1) * cos(ShoreAng) + ...
+                          PosRelative(:,2) * sin(ShoreAng);
+                      
+save('outputs\ChannelPos.mat','ChannelPos','-v7.3')
+                      
+%% Plot
+plot(ChannelPos.UniqueTime,[ChannelPos.UsOffset,ChannelPos.DsOffset],'x')
+legend({'Upstream end of outlet channel','Downstream end of outlet channel'})
+ylabel('Alongshore distance (North positive) from river centreline (m)')
