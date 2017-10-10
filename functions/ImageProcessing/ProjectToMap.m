@@ -92,5 +92,14 @@ Distance(Distance>1000) = nan;
 PixelEasting = Cam.Easting + Distance .* sind(Bearing);
 PixelNorthing = Cam.Northing + Distance .* cosd(Bearing);
 
+%% Display projected image (optional, requires TestImage)
+if exist('TestImage','var')
+    figure
+    surf(PixelEasting,PixelNorthing,zeros(size(Bearing)),TestImage,'EdgeColor',...
+         'none','FaceColor','texturemap')
+    view(2)
+    axis equal
+end
+
 end
 

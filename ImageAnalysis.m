@@ -302,9 +302,9 @@ save('outputs\StdTidePhotos.mat',...
  
 clear PhotoDates UniquePhotoDates HT LT ST TodaysPhotos
 
-% load(outputs\LowTidePhotos.mat')
-% load(outputs\HighTidePhotos.mat')
-% load(outputs\StdTidePhotos.mat')
+% load('outputs\LowTidePhotos.mat')
+% load('outputs\HighTidePhotos.mat')
+% load('outputs\StdTidePhotos.mat')
 
 %% Plot offsets for std tide
 figure('Position', [1, ScrSz(4)/2, ScrSz(3), 300]);
