@@ -12,11 +12,6 @@ Config = HurunuiAnalysisConfig;
 % get screensize for plot setups
 ScrSz = get(groot, 'ScreenSize');
 
-%% Read in timeseries data
-
-
-
-
 
 %% Longterm multi panel timeseries plot
 

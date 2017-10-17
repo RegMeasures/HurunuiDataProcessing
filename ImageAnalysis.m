@@ -219,6 +219,8 @@ TimesToProcess = ShortlistPhotos.TwistOK & ShortlistPhotos.WetBdyOK;
     measureLagoonWidth(ShortlistPhotos(TimesToProcess,:), ...
                        Config.Transects, false);
 
+save('outputs\ShortlistPhotos.mat','ShortlistPhotos','-v7.3')
+
 % tidy up
 clear TimesToProcess
 

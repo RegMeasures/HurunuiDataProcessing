@@ -174,7 +174,14 @@ plot(Hypsometry.Volume,Hypsometry.Elevation,'-xb')
 xlabel('Lagoon volume [m^3]')
 ylabel('Lagoon water surface elevation [m-LVD]')
 
-clear DataOk
+% Wave data
+figure
+wind_rose(WaveTS.DirDeg, WaveTS.HsM, ...
+          'dtype', 'meteo', ...
+          'lablegend', 'H_s (m)', ...
+          'labtitle', 'Offshore wave direction and height')
+
+clear DataOk WLchange
 
 %% Convert Sumner tide to Hurunui
 
@@ -206,8 +213,29 @@ legend('Sumner observed','Hurunui calculated')
 ylabel('Sea level [mLVD]')
 
 %% Calculate wave parameters
-WaveTS.Angle = angleDiff(WaveTS.DirDeg*pi/180, Config.OnshoreDir*pi/180);
-%WaveTS.LstPot = 
+WaveTS.Angle = angleDiff(deg2rad(Config.ShoreNormalDir), deg2rad(WaveTS.DirDeg));
+% Qs = K*H^(12/5)*T(1/5)*(cos(theta))^(6/5)*sin(theta);
+% Ashton, Murray (2006) eq5
+OnshoreWaves = WaveTS.Angle>-pi/2 & WaveTS.Angle<pi/2;
+WaveTS.LstPot = zeros(size(WaveTS,1),1);
+WaveTS.LstPot(OnshoreWaves) = WaveTS.HsM(OnshoreWaves).^(12/5) .* ...
+                              WaveTS.TsSec(OnshoreWaves).^(1/5) .* ...
+                              (cos(WaveTS.Angle(OnshoreWaves))).^(6/5) .* ...
+                              sin (WaveTS.Angle(OnshoreWaves));
+figure
+histogram(WaveTS.DirDeg)
+xlabel('Wave approach direction (degrees)')
+hold on 
+plot(repmat(Config.ShoreNormalDir,[2,1]),ylim')
+figure
+histogram(rad2deg(WaveTS.Angle))
+xlim([-90,90])
+xlabel('Wave approach angle (degrees)')
+figure
+plot(WaveTS.Date,WaveTS.LstPot)
+ylabel('Longshore transport potential')
+plot(WaveTS.Date,cumsum(WaveTS.LstPot))
+ylabel('Cumulative longshore transport potential')
 
 %% Interpolate data onto same timesteps
 LagoonTS.Qin = interp1(RiverTS.DateTime,...
@@ -225,6 +253,9 @@ LagoonTS.WaveTs = interp1(WaveTS.Date,...
 LagoonTS.WaveAngle = interp1(WaveTS.Date,...
                            WaveTS.Angle,...
                            LagoonTS.DateTime);
+LagoonTS.LstPot = interp1(WaveTS.Date,...
+                          WaveTS.LstPot,...
+                          LagoonTS.DateTime);
 
 figure
 plot(LagoonTS.DateTime, LagoonTS{:,{'WL','SeaLevel'}});

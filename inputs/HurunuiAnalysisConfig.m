@@ -81,7 +81,7 @@ Config.Transects = cellfun(@flipud, Transects.ncst, ...
                            'UniformOutput', false);
 clear TransectShp Transects
 
-Config.OnshoreDir = 308; % Shoreline angle - given as direction of a shore normal line towards the coast in degrees
+Config.ShoreNormalDir = 128; % Shoreline angle - given as direction of a shore normal line towards the coast in degrees
 
 % Shoreline measure line
 ShorelineShp = 'AlongshoreMeasure';
