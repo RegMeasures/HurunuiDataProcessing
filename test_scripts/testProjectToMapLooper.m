@@ -4,7 +4,7 @@ function [Twist,WetBdy,Offsets] = testProjectToMapLooper(Config,TestImage1,TestI
 ScrSz = get(groot, 'ScreenSize');
 
 % Measure pole twist
-Twist = MeasureTwist1(TestImage1,true,Config.Cam1.k,Config.Cam1.Resolution);
+Twist = MeasureTwist1(TestImage1,Config.Cam1.k,Config.Cam1.Resolution,true);
 
 % find wet edges
 [WetMask1, WetBdy1] = WetDry2(TestImage1, Config.FgBgMask1, ...

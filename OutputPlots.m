@@ -14,15 +14,15 @@ ScrSz = get(groot, 'ScreenSize');
 
 %% Read in timeseries data
 
+
+
+
+
+%% Longterm multi panel timeseries plot
+
 % Read lagoon time series (already processed)
 LagoonTS = readtable('outputs\LagoonTS.csv');
 LagoonTS.DateTime = datetime(LagoonTS.DateTime);
-
-% Read in daily TS
-DailyLagoonTS = readtable('outputs\DailyLagoonTS.csv');
-DailyLagoonTS.Date = datetime(DailyLagoonTS.Date);
-
-%% Longterm multi panel timeseries plot
 
 FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 800]);
 XRange = [datetime('1-Jul-2015'),datetime('1-Jul-2017')];
@@ -80,6 +80,10 @@ set(AxH{5}, 'Position', [0.05, 0/3+0.055, 0.71, 1/3-0.06])
 set(AxH{6}, 'Position', [0.8,  0/3+0.055, 0.18, 1/3-0.06])
 
 %% TS plot of daily WL analysis
+
+% Read in daily TS
+DailyLagoonTS = readtable('outputs\DailyLagoonTS.csv');
+DailyLagoonTS.Date = datetime(DailyLagoonTS.Date,'InputFormat','dd/MM/yyyy');
 
 % overview TS
 figure
