@@ -12,6 +12,8 @@ Config = HurunuiAnalysisConfig;
 % get screensize for plot setups
 ScrSz = get(groot, 'ScreenSize');
 
+%% Plot setup
+XRange = [datetime('1-Jul-2015'),datetime('1-Jul-2017')];
 
 %% Longterm multi panel timeseries plot
 
@@ -20,7 +22,6 @@ LagoonTS = readtable('outputs\LagoonTS.csv');
 LagoonTS.DateTime = datetime(LagoonTS.DateTime);
 
 FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 800]);
-XRange = [datetime('1-Jul-2015'),datetime('1-Jul-2017')];
 
 % Top panel - flow
 % timeseries
@@ -82,7 +83,6 @@ DailyLagoonTS.Date = datetime(DailyLagoonTS.Date,'InputFormat','dd/MM/yyyy');
 
 % overview TS
 figure
-XRange = [datetime('1-Jul-2015'),datetime('1-Jul-2017')];
 
 fill([DailyLagoonTS.Date;flipud(DailyLagoonTS.Date)],[DailyLagoonTS.MinWL;flipud(DailyLagoonTS.MaxWL)],[0.3,0.3,0.3])
 hold on
@@ -111,7 +111,37 @@ plot(DailyLagoonTS.WL_Range,DailyLagoonTS.MeanQin,'x')
 xlabel('Lagoon water level range (m)')
 ylabel('Lagoon inflow (m^3/s)')
 
+%% TS plot of outlet channel position
 
+load('outputs\ChannelPos.mat')
+FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 500]);
+plot(ChannelPos.UniqueTime,[ChannelPos.UsOffset,ChannelPos.DsOffset],'x')
+xlim(XRange)
+legend({'Upstream end of outlet channel','Downstream end of outlet channel'}, ...
+       'Location', 'northwest')
+ylabel('Alongshore distance (North positive) from river centreline (m)')
+
+%% TS plot of flow only
+
+% Read lagoon time series (already processed)
+LagoonTS = readtable('outputs\LagoonTS.csv');
+LagoonTS.DateTime = datetime(LagoonTS.DateTime);
+
+FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 500]);
+plot(LagoonTS.DateTime,LagoonTS.Qin)
+xlim(XRange)
+ylabel('Hapua inflow (m^3/s)')
+
+%% TS Plot of waves
+
+% Read lagoon time series (already processed)
+LagoonTS = readtable('outputs\LagoonTS.csv');
+LagoonTS.DateTime = datetime(LagoonTS.DateTime);
+
+FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 500]);
+plot(LagoonTS.DateTime,LagoonTS.WaveHs)
+xlim(XRange)
+ylabel('Offshore Sig. wave height, H_s (m)')
 
 
 
