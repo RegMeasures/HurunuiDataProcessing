@@ -122,6 +122,8 @@ clear WaveTS2
 DataOk = true(size(LagoonTS,1),1);
 DataOk(LagoonTS.WL>3.7) = false;
 DataOk(LagoonTS.WL<-0.1) = false;
+DataOk(LagoonTS.DateTime < ...
+   datetime('8/6/2015 15:00', 'InputFormat', 'dd/MM/yyyy HH:mm')) = false;
 LagoonTS = LagoonTS(DataOk,:);
 figure
 plot(LagoonTS.DateTime,LagoonTS.WL)
@@ -234,6 +236,8 @@ xlabel('Wave approach angle (degrees)')
 figure
 plot(WaveTS.Date,WaveTS.LstPot)
 ylabel('Longshore transport potential')
+figure
+histogram(WaveTS.LstPot)
 plot(WaveTS.Date,cumsum(WaveTS.LstPot))
 ylabel('Cumulative longshore transport potential')
 
