@@ -224,6 +224,9 @@ WaveTS.LstPot(OnshoreWaves) = WaveTS.HsM(OnshoreWaves).^(12/5) .* ...
                               WaveTS.TsSec(OnshoreWaves).^(1/5) .* ...
                               (cos(WaveTS.Angle(OnshoreWaves))).^(6/5) .* ...
                               sin (WaveTS.Angle(OnshoreWaves));
+
+clear OnshoreWaves
+
 figure
 histogram(WaveTS.DirDeg)
 xlabel('Wave approach direction (degrees)')
