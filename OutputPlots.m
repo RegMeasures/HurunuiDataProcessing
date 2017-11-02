@@ -13,7 +13,7 @@ Config = HurunuiAnalysisConfig;
 ScrSz = get(groot, 'ScreenSize');
 
 %% Plot setup
-XRange = [datetime('1-Jul-2015'),datetime('1-Jul-2017')];
+XRange = [datetime('1-Jul-2015'),datetime('1-Oct-2017')];
 
 %% Longterm multi panel timeseries plot
 
@@ -144,4 +144,62 @@ xlim(XRange)
 ylabel('Offshore Sig. wave height, H_s (m)')
 
 
+%% Longterm multi panel timeseries plot
+
+% Read lagoon time series (already processed)
+LagoonTS = readtable('outputs\LagoonTS.csv');
+LagoonTS.DateTime = datetime(LagoonTS.DateTime);
+
+% Read sampled timeseries
+load('outputs\ShortlistPhotos.mat')
+
+% Load channel position TS
+load('outputs\ChannelPos.mat')
+
+% set up figure
+ax = figure_ts(4,datenum(XRange),0,'Date');
+datetick('x','mmmyy','keeplimits')
+ax(2).XGrid = 'on';
+
+% ticks and ylabels for each axis
+YTicsChan = [0,400,800,1200,1600]; YLblChan = 'Alongshore distance from river centreline (m)';
+YTicsWidth = [40,80,120,160]; YLblWidth = 'Lagoon width (m)';
+YTicsFlow = [0,100,200,300,400]; YLblFlow = 'River flow (m^3/s)';
+YTicsLst = [-40,0,40,80]; YLblLst = 'Longshore transport potential';
+
+% plot outlet channel position
+subplot_ts(ax, 1, YTicsChan ,YLblChan, 0.3, 0,...
+           's1', datenum(ChannelPos.UniqueTime), ChannelPos.UsOffset, ...
+                 '.k', ...
+           's2', datenum(ChannelPos.UniqueTime), ChannelPos.DsOffset, ...
+                 '.r')
+       
+% plot lagoon width
+TPlotDates = repmat(datenum(ShortlistPhotos.UniqueTime), [5, 1]);
+T5 = permute(ShortlistPhotos.OffsetOK(:,5,:),[1,3,2]); T5 = T5(:);
+T6 = permute(ShortlistPhotos.OffsetOK(:,6,:),[1,3,2]); T6 = T6(:);
+T7 = permute(ShortlistPhotos.OffsetOK(:,7,:),[1,3,2]); T7 = T7(:);
+T8 = permute(ShortlistPhotos.OffsetOK(:,8,:),[1,3,2]); T8 = T8(:);
+
+subplot_ts(ax, 2, YTicsWidth, YLblWidth, 0.7, 1,...
+           's1', TPlotDates, T5, '.g', ...
+           's2', TPlotDates, T6, '.b', ...
+           's3', TPlotDates, T7, '.k', ...
+           's4', TPlotDates, T8, '.r');
+
+% plot river flow
+subplot_ts(ax, 3, YTicsFlow ,YLblFlow, 0.5, 0,...
+           's1', datenum(LagoonTS.DateTime), LagoonTS.Qin, ...
+                 'color', [0,0.7,0.9]);
+
+% plot LST pot
+subplot_ts(ax, 4, YTicsLst ,YLblLst, 0.2, -1,...
+           's1', datenum(LagoonTS.DateTime), LagoonTS.LstPot, '-k');
+
+
+% add legend for transects
+%LegWidth = legend_ts(ax, 2, 'west', ...
+%                     'Transect 5', 'Transect 6', 'Transect 7', 'Transect 8');
+
+clear YTicsChan YTicsWidth YTicsFlow YTicsLstT PlotDates T5 T6 T7 T8
 

@@ -240,9 +240,11 @@ for TransectNo = 1:size(ShortlistPhotos.Offsets,2)
 end
 ShortlistPhotos.OffsetOK(OffsetOK) = ShortlistPhotos.Offsets(OffsetOK);
 
+save('outputs\ShortlistPhotos.mat','ShortlistPhotos','-v7.3')
+
 clear WindowSize OffsetThreshold PropThreshold ProportionOK OffsetOK
 
-% plot the filtered Offset time series
+%% plot the filtered Offset time series
 for TransectNo = 1:13 %size(ShortlistPhotos.Offsets,2);
     figure('Position', [(ScrSz(3)/2)-660+10*(TransectNo-1), ...
                         ScrSz(4)/2-100+10*(TransectNo-1), 1200, 400],...
