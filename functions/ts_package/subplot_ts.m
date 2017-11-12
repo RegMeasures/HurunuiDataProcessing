@@ -1,4 +1,4 @@
-function [H] = subplot_ts(ax,idx,ytix,lbl,spacing,offset,varargin)
+function [H] = subplot_ts(ax,idx,ytix,lbl,Yscale,offset,varargin)
 %%% Stacked Time Series Subplotter %%%
 
 %%Author: A. Seltzer
@@ -15,9 +15,8 @@ function [H] = subplot_ts(ax,idx,ytix,lbl,spacing,offset,varargin)
 %   ytix: array of y tick marks (in ascending order indicates regular y
 %         axis; in decending order indicates reversed y axis)
 %   lbl: ylabel text
-%   spacing: 0 = each axes uses whole range (no spacing)
-%            1 = each axes uses half of range
-%            0.5 = each axes uses 75% of range
+%   Yscale: 1 = each axes uses whole range (no spacing)
+%           0.5 = each axes uses half of range
 %   varargin: add up to FOUR time series to plot by passing 's1' (for
 %              series #1, 's2' for #2, etc.), followed by regular plotting
 %              parameters passed to plot.m function call. (see example)
@@ -74,12 +73,12 @@ if s2ind~=0
     else
         s2end=s3ind-1;
     end
-    x2=varargin{s1ind+1};
-    y2=varargin{s1ind+2};
+    x2=varargin{s2ind+1};
+    y2=varargin{s2ind+2};
     y2=y2(and(x2>=xlims(1),x2<=xlims(2)));
     x2=x2(and(x2>=xlims(1),x2<=xlims(2)));
-    maxs(1)=max(y2);
-    mins(1)=min(y2);
+    maxs(2)=max(y2);
+    mins(2)=min(y2);
 end
 
 %%ID 3rd series
@@ -89,27 +88,27 @@ if s3ind~=0
     else
         s3end=s4ind-1;
     end
-    x3=varargin{s1ind+1};
-    y3=varargin{s1ind+2};
+    x3=varargin{s3ind+1};
+    y3=varargin{s3ind+2};
     y3=y3(and(x3>=xlims(1),x3<=xlims(2)));
     x3=x3(and(x3>=xlims(1),x3<=xlims(2)));
-    maxs(1)=max(y3);
-    mins(1)=min(y3);
+    maxs(3)=max(y3);
+    mins(3)=min(y3);
 end
 
 %%ID 4th series
 if s4ind~=0
         s4end=length(varargin);
-    x4=varargin{s1ind+1};
-    y4=varargin{s1ind+2};
+    x4=varargin{s4ind+1};
+    y4=varargin{s4ind+2};
     y4=y4(and(x4>=xlims(1),x4<=xlims(2)));
     x4=x4(and(x4>=xlims(1),x4<=xlims(2)));
-    maxs(1)=max(y4);
-    mins(1)=min(y4);
+    maxs(4)=max(y4);
+    mins(4)=min(y4);
 end
 
 %%Scaling
-rangeFill=5*(1-spacing)+5;
+rangeFill = 10 * Yscale;
 range=abs(max(maxs)-min(mins));
 scale=rangeFill/range;
 isRev=ytix(1)>ytix(2);
