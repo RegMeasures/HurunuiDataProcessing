@@ -24,19 +24,22 @@ AllPhotos = genPhotoDataTable(fullfile(Config.DataFolder,Config.PhotoFolder));
 [~ ,~ ,~ ,~ ,CaptureMins ,~ ] = datevec(AllPhotos.CaptureTime);
 Photos = AllPhotos(CaptureMins==30 | CaptureMins==0,:);
 
-clear AllPhotos
+clear AllPhotos CaptureMins
 
 %% Generate quality metrics and assess quality
 
-% generate metrics from scratch
-Photos = photoQuality(fullfile(Config.DataFolder,Config.PhotoFolder), ...
-                      Photos);
-                  
-% Or alternatively re-use previously calculated metrics to avoid duplication of effort
-%PhotosPrevious = load('outputs\PhotoDatabase.mat');
-%PhotosPrevious = PhotosPrevious.Photos;
-%Photos = photoQuality(fullfile(Config.DataFolder,Config.PhotoFolder), ...
-%                      Photos,PhotosPrevious);
+% See if there are any previously calculated
+if exist('outputs\PhotoDatabase.mat','file')
+    % Re-use previously calculated metrics to avoid duplication of effort
+    PhotosPrevious = load('outputs\PhotoDatabase.mat');
+    PhotosPrevious = PhotosPrevious.Photos;
+    Photos = photoQuality(fullfile(Config.DataFolder,Config.PhotoFolder), ...
+                          Photos,PhotosPrevious);
+else
+    % generate metrics from scratch
+    Photos = photoQuality(fullfile(Config.DataFolder,Config.PhotoFolder), ...
+                          Photos);
+end
 
 % assess quality
 Photos.QualityOk = Photos.Sharpness > Config.SharpThresh & ...
@@ -93,19 +96,33 @@ end
 % remove times with 1 missing or low quality image
 ShortlistPhotos = ShortlistPhotos(~isnan(ShortlistPhotos.Cam1Photo) & ...
                                   ~isnan(ShortlistPhotos.Cam2Photo), :);
+                              
+clear ii
 
 %% Loop through images, measure twist and extract waters edge
-
-NoToProcess = size(ShortlistPhotos,1);
 
 % Create variables to hold outputs. 
 % (first check if they exist in ShortlistPhotos table)
 if ~ismember('Twist', ShortlistPhotos.Properties.VariableNames)
-    ShortlistPhotos.Twist = nan(NoToProcess,2);
+    ShortlistPhotos.Twist = nan(height(ShortlistPhotos),2);
 end
 if ~ismember('WetBdy', ShortlistPhotos.Properties.VariableNames)
-    ShortlistPhotos.WetBdy = cell(NoToProcess,1);
+    ShortlistPhotos.WetBdy = cell(height(ShortlistPhotos),1);
 end
+
+% Import previous data if available
+if exist('outputs\ShortlistPhotos.mat','file')
+    OldShortlistPhotos = load('outputs\ShortlistPhotos.mat');
+    OldShortlistPhotos = OldShortlistPhotos.ShortlistPhotos;
+    % find matching data
+    [~,IA,IB] = intersect(OldShortlistPhotos.UniqueTime, ...
+                          ShortlistPhotos.UniqueTime,'stable');
+    ShortlistPhotos(IB,{'Twist','WetBdy'}) = OldShortlistPhotos(IA,{'Twist','WetBdy'});
+    clear OldShortlistPhotos
+end
+
+TimeNoToProcess = find(cellfun(@isempty,ShortlistPhotos.WetBdy));
+NoToProcess = size(TimeNoToProcess,1);
 
 % limit the number of timesteps processed at a time so that if I need to
 % break the process I can get the results out... Pareval might be better?
@@ -113,8 +130,8 @@ IterationLimit = 70;
 
 ii = 1;
 while ii <= NoToProcess
-    ThisLoop = ii : min(ii+IterationLimit-1, NoToProcess);
-    ii = ThisLoop(end) + 1;
+    ThisLoop = TimeNoToProcess(ii : min(ii+IterationLimit-1, NoToProcess))';
+    ii = min(ii+IterationLimit-1, NoToProcess) + 1;
     
     Cam1Photos = ShortlistPhotos.Cam1Photo(ThisLoop);
     Cam2Photos = ShortlistPhotos.Cam2Photo(ThisLoop);
@@ -158,8 +175,9 @@ while ii <= NoToProcess
 end
     
 % Clean up
-clear Cam1Photos Cam2Photos WL Photo1FileName Photo2FileName Twist1 Twist2 ...
-    WetBdy1 WetBdy2 IterationLimit NoToProcess ThisLoop ii
+clear Cam1Photos Cam2Photos WL Photo1FileName Photo2FileName Twist1 ...
+    Twist2 WetBdy1 WetBdy2 IterationLimit NoToProcess ThisLoop ii ...
+    TimeNoToProcess
 
 % Save
 save('outputs\ShortlistPhotos.mat','ShortlistPhotos','-v7.3')
