@@ -1,4 +1,4 @@
-function [] = subplot_ts(ax,idx,ytix,lbl,spacing,offset,varargin)
+function [H] = subplot_ts(ax,idx,ytix,lbl,spacing,offset,varargin)
 %%% Stacked Time Series Subplotter %%%
 
 %%Author: A. Seltzer
@@ -135,19 +135,19 @@ end
 %%Plot series
 axes(ax(idx+1)); %set to correct axes
 hold on;
-plot(varargin{s1ind+1:s1end});
+H{1} = plot(varargin{s1ind+1:s1end});
 if(s2ind~=0)
-    plot(varargin{s2ind+1:s2end});
+    H{2} = plot(varargin{s2ind+1:s2end});
 end
 if(s3ind~=0)
-    plot(varargin{s3ind+1:s3end});
+    H{3} = plot(varargin{s3ind+1:s3end});
 end
 if(s4ind~=0)
-    plot(varargin{s4ind+1:s4end});
+    H{4} = plot(varargin{s4ind+1:s4end});
 end
 
 %%Set tick marks
-set(gca,'ytick',ytix.*flipscale-10*idx-mdp+5,'yticklabels',ytix);
+set(gca,'ytick',ytix.*flipscale-10*idx-mdp+5+offset,'yticklabels',ytix);
 
 %%Print label
 dir=get(gca,'xdir');
@@ -166,7 +166,7 @@ else
         xpt=1.075*(xmax-xmin)+xmin;
     end
 end
-ypt=-10*idx+5;
+ypt=-10*idx+5+offset;
 ylabel(lbl,'position',[xpt ypt]);
 
 

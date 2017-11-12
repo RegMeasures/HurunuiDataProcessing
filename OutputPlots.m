@@ -15,11 +15,19 @@ ScrSz = get(groot, 'ScreenSize');
 %% Plot setup
 XRange = [datetime('1-Jul-2015'),datetime('1-Oct-2017')];
 
-%% Longterm multi panel timeseries plot
+%% Load data
 
 % Read lagoon time series (already processed)
 LagoonTS = readtable('outputs\LagoonTS.csv');
 LagoonTS.DateTime = datetime(LagoonTS.DateTime);
+
+% Read sampled timeseries
+load('outputs\ShortlistPhotos.mat')
+
+% Load channel position TS
+load('outputs\ChannelPos.mat')
+
+%% Longterm multi panel timeseries plot
 
 FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 800]);
 
@@ -113,7 +121,6 @@ ylabel('Lagoon inflow (m^3/s)')
 
 %% TS plot of outlet channel position
 
-load('outputs\ChannelPos.mat')
 FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 500]);
 plot(ChannelPos.UniqueTime,[ChannelPos.UsOffset,ChannelPos.DsOffset],'x')
 xlim(XRange)
@@ -123,20 +130,12 @@ ylabel('Alongshore distance (North positive) from river centreline (m)')
 
 %% TS plot of flow only
 
-% Read lagoon time series (already processed)
-LagoonTS = readtable('outputs\LagoonTS.csv');
-LagoonTS.DateTime = datetime(LagoonTS.DateTime);
-
 FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 500]);
 plot(LagoonTS.DateTime,LagoonTS.Qin)
 xlim(XRange)
 ylabel('Hapua inflow (m^3/s)')
 
 %% TS Plot of waves
-
-% Read lagoon time series (already processed)
-LagoonTS = readtable('outputs\LagoonTS.csv');
-LagoonTS.DateTime = datetime(LagoonTS.DateTime);
 
 FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 500]);
 plot(LagoonTS.DateTime,LagoonTS.WaveHs)
@@ -146,33 +145,46 @@ ylabel('Offshore Sig. wave height, H_s (m)')
 
 %% Longterm multi panel timeseries plot
 
-% Read lagoon time series (already processed)
-LagoonTS = readtable('outputs\LagoonTS.csv');
-LagoonTS.DateTime = datetime(LagoonTS.DateTime);
-
-% Read sampled timeseries
-load('outputs\ShortlistPhotos.mat')
-
-% Load channel position TS
-load('outputs\ChannelPos.mat')
-
 % set up figure
 ax = figure_ts(4,datenum(XRange),0,'Date');
+FigPos = get(gcf,'pos');
+set(gcf,'pos',[FigPos(1),FigPos(2)-(900-FigPos(4)),700,900])
 datetick('x','mmmyy','keeplimits')
 ax(2).XGrid = 'on';
 
 % ticks and ylabels for each axis
-YTicsChan = [0,400,800,1200,1600]; YLblChan = 'Alongshore distance from river centreline (m)';
-YTicsWidth = [40,80,120,160]; YLblWidth = 'Lagoon width (m)';
-YTicsFlow = [0,100,200,300,400]; YLblFlow = 'River flow (m^3/s)';
-YTicsLst = [-40,0,40,80]; YLblLst = 'Longshore transport potential';
+YTicsChan = 0:400:1600; YLblChan = 'Alongshore distance from river centreline (m)';
+YTicsWidth = 40:40:160; YLblWidth = 'Lagoon width (m)';
+YTicsFlow = 0:200:600; YLblFlow = 'River flow (m^3/s)';
+YTicsLst = -40:40:80; YLblLst = 'Longshore transport potential';
 
 % plot outlet channel position
-subplot_ts(ax, 1, YTicsChan ,YLblChan, 0.3, 0,...
-           's1', datenum(ChannelPos.UniqueTime), ChannelPos.UsOffset, ...
-                 '.k', ...
-           's2', datenum(ChannelPos.UniqueTime), ChannelPos.DsOffset, ...
-                 '.r')
+ChanSpacing = 0.3;
+ChanOffset = 0;
+
+rangeFill=5*(1-ChanSpacing)+5;
+range=abs(max(max(ChannelPos.UsOffset))-min(min(ChannelPos.UsOffset)));
+scale=rangeFill/range;
+mdp=(min(min(ChannelPos.UsOffset)) + range/2) * scale;
+patch(ax(2),datenum([XRange,fliplr(XRange)]), ...
+      [640,640,760,760] * scale - 5 - mdp + ChanOffset, ...
+      [0.9,0.95,0.9], 'EdgeColor', 'none')
+  
+ChanH = subplot_ts(ax, 1, YTicsChan ,YLblChan, ChanSpacing, 0,...
+                   's1', datenum(ChannelPos.UniqueTime), ChannelPos.UsOffset, ...
+                         '.k', 'MarkerSize', 7, ...
+                   's2', datenum(ChannelPos.UniqueTime), ChannelPos.DsOffset, ...
+                         '.r', 'MarkerSize', 7);
+
+LegChan = legend(ax(2),[ChanH{1},ChanH{2}], ...
+                 {'Upstream end of outlet channel', ...
+                  'Downstream end of outlet channel'});               
+set(LegChan, 'Position', [0.13, 0.88, 0.3191, 0.0406], ...
+             'box', 'on', 'EdgeColor', 'none', ...
+             'color', [1,1,1])
+
+text(ax(2), datenum(XRange(1)+days(30)), 710 * scale -5-mdp+ChanOffset, ...
+     'Camera blind spot', 'Color',[0.5,0.5,0.5])
        
 % plot lagoon width
 TPlotDates = repmat(datenum(ShortlistPhotos.UniqueTime), [5, 1]);
@@ -181,25 +193,27 @@ T6 = permute(ShortlistPhotos.OffsetOK(:,6,:),[1,3,2]); T6 = T6(:);
 T7 = permute(ShortlistPhotos.OffsetOK(:,7,:),[1,3,2]); T7 = T7(:);
 T8 = permute(ShortlistPhotos.OffsetOK(:,8,:),[1,3,2]); T8 = T8(:);
 
-subplot_ts(ax, 2, YTicsWidth, YLblWidth, 0.7, 1,...
-           's1', TPlotDates, T5, '.g', ...
-           's2', TPlotDates, T6, '.b', ...
-           's3', TPlotDates, T7, '.k', ...
-           's4', TPlotDates, T8, '.r');
+WidthH = subplot_ts(ax, 2, YTicsWidth, YLblWidth, 0.7, 1,...
+                    's1', TPlotDates, T5, '.g', 'MarkerSize', 7, ...
+                    's2', TPlotDates, T6, '.b', 'MarkerSize', 7, ...
+                    's3', TPlotDates, T7, '.k', 'MarkerSize', 7, ...
+                    's4', TPlotDates, T8, '.r', 'MarkerSize', 7);
 
+LegWidth = legend(ax(3),[WidthH{1},WidthH{2},WidthH{3},WidthH{4}], ...
+                  {'Transect 5', 'Transect 6', 'Transect 7', 'Transect 8'});
+set(LegWidth, 'Position', [0.755, 0.63,0.1397, 0.0772], ...
+              'box', 'on', 'EdgeColor', 'none', ...
+              'color', [1,1,1])
 % plot river flow
-subplot_ts(ax, 3, YTicsFlow ,YLblFlow, 0.5, 0,...
+subplot_ts(ax, 3, YTicsFlow ,YLblFlow, 0, -1.5,...
            's1', datenum(LagoonTS.DateTime), LagoonTS.Qin, ...
                  'color', [0,0.7,0.9]);
 
 % plot LST pot
-subplot_ts(ax, 4, YTicsLst ,YLblLst, 0.2, -1,...
+subplot_ts(ax, 4, YTicsLst ,YLblLst, 0, -2,...
            's1', datenum(LagoonTS.DateTime), LagoonTS.LstPot, '-k');
 
 
-% add legend for transects
-%LegWidth = legend_ts(ax, 2, 'west', ...
-%                     'Transect 5', 'Transect 6', 'Transect 7', 'Transect 8');
-
-clear YTicsChan YTicsWidth YTicsFlow YTicsLstT PlotDates T5 T6 T7 T8
+clear YTicsChan YTicsWidth YTicsFlow YTicsLstT PlotDates T5 T6 T7 T8 ...
+    FigPos ChanSpacing ChanOffset range rangeFill scale 
 
