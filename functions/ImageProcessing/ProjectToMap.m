@@ -29,7 +29,7 @@ function [PixelEasting, PixelNorthing] = ...
 %   
 %   Outputs:
 %      PixelEasting, PixelNorthing = Real world coordinates of locations
-%                                    given in PixelX, PixelY
+%                                    given in PixelRow, PixelCol
 %   
 %   Notes:
 %   - Neglects curvature of the earth - not sure if this is significant

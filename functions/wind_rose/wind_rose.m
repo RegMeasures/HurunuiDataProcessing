@@ -25,6 +25,9 @@ function varargout = wind_rose(D,F,varargin)
 %       -legtype, legend type: 1, continuous, 2, separated boxes [2]
 %       -bcolor, full rectangle border color ['none']
 %       -lcolor, line colors for axes and circles ['k']
+%       -lwidth, line width for axes and circles [1]
+%       -lstyle, line style for axes and circles [:]
+%       -bgcolor, background color for plot ['w']
 %       -percbg, percentage labels bg ['w']
 %       -ax, to place wind rose on pervious axes, the input for ax
 %            must be [theax x y width], where theax is the previous
@@ -36,6 +39,7 @@ function varargout = wind_rose(D,F,varargin)
 %                highest values are placed nearest the origin [{0} 1]
 %       -inorm, normalize intensities, means all angles will have 100%
 %       -incout, if 0, data outside di limits will not be used [0 {1}]
+%       -compass, label compass directions [true]
 %
 %   Output:
 %      HANDLES   Handles of all lines, fills, texts
@@ -106,6 +110,10 @@ iflip=0;
 inorm=0;
 parent=0;
 IncHiLow=1; % include values higher and lower that the limits of Ag.
+compass=true;
+bgcolor='w';
+lwidth=1;
+lstyle=':';
 
 vin=varargin;
 for i=1:length(vin)
@@ -156,6 +164,14 @@ for i=1:length(vin)
     parent=vin{i+1};
   elseif isequal(vin{i},'incout')
     IncHiLow=vin{i+1};
+  elseif isequal(vin{i},'compass')
+    compass=vin{i+1};
+  elseif isequal(vin{i},'bgcolor')
+    bgcolor=vin{i+1};
+  elseif isequal(vin{i},'lwidth')
+    lineWidth=vin{i+1};
+  elseif isequal(vin{i},'lstyle')
+    lineStyle=vin{i+1};
   end
 end
 
@@ -254,17 +270,20 @@ if parent
   wrAx=parent;
   set(wrAx,'units','normalized');
 else
-  wrAx=axes('units','normalized');
+  wrAx=axes('units','normalized','Color','none');
 end
 ri=g*ri;
-handles(end+1)=fill([-rs*g rl*g rl*g -rs*g],[-rs*g -rs*g rs*g rs*g],'w',...
-                     'EdgeColor',borderColor);
+if ~strcmp(bgcolor,'none')
+    handles(end+1)=fill([-rs*g rl*g rl*g -rs*g],[-rs*g -rs*g rs*g rs*g],bgcolor,...
+                         'EdgeColor',borderColor);
+end
 if onAxes
   set(handles(end),'facecolor','none')
 end
 hold on
 handles(end+1)=plot([-g-ri -ri nan ri g+ri nan 0 0 nan 0 0],...
-                    [0 0 nan 0 0 nan -g-ri -ri nan ri g+ri],':','color',lineColors);
+                    [0 0 nan 0 0 nan -g-ri -ri nan ri g+ri],lineStyle,...
+                    'color',lineColors,'LineWidth',lineWidth);
 t0=[0:360]*pi/180;
 labs=[];
 Ang=[1/4 3/4 5/4 7/4]*pi;
@@ -274,7 +293,7 @@ for i=1:ncircles
   x=(ci(i)+ri)*cos(t0);
   y=(ci(i)+ri)*sin(t0);
 
-  circles(i)=plot(x,y,':','color',lineColors);
+  circles(i)=plot(x,y,lineStyle,'color',lineColors,'LineWidth',lineWidth);
   handles(end+1)=circles(i);
 
   labs(i)=text((ci(i)+ri)*cos(Ang(quad)),(ci(i)+ri)*sin(Ang(quad)),[num2str(ci(i)),'%'],...
@@ -335,13 +354,15 @@ set(wrAx,'children',ch);
 
 
 % N S E W labels:
-bg='none';
-args={'BackgroundColor',bg,'FontSize',8};
-h(1)=text(-g-ri, 0,'WEST', 'VerticalAlignment','top',   'HorizontalAlignment','left', args{:});
-h(2)=text( g+ri, 0,'EAST', 'VerticalAlignment','top',   'HorizontalAlignment','right',args{:});
-h(3)=text( 0,-g-ri,'SOUTH','VerticalAlignment','bottom','HorizontalAlignment','left', args{:});
-h(4)=text( 0, g+ri,'NORTH','VerticalAlignment','top',   'HorizontalAlignment','left', args{:});
-handles=[handles h];
+if compass
+    bg='none';
+    args={'BackgroundColor',bg,'FontSize',8};
+    h(1)=text(-g-ri, 0,'WEST', 'VerticalAlignment','top',   'HorizontalAlignment','left', args{:});
+    h(2)=text( g+ri, 0,'EAST', 'VerticalAlignment','top',   'HorizontalAlignment','right',args{:});
+    h(3)=text( 0,-g-ri,'SOUTH','VerticalAlignment','bottom','HorizontalAlignment','left', args{:});
+    h(4)=text( 0, g+ri,'NORTH','VerticalAlignment','top',   'HorizontalAlignment','left', args{:});
+    handles=[handles h];
+end
 
 % scale legend:
 L=(g*rl-g-ri)/7;
