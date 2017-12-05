@@ -9,6 +9,9 @@ addpath(genpath('inputs'))
 % Read input parameters
 Config = HurunuiAnalysisConfig;
 
+% Other fixed parameters
+Gravity = 9.81;
+
 %% Load Data and apply datum corrections etc.
 
 % Load Hurunui at SH1 data from web :-)
@@ -215,15 +218,29 @@ legend('Sumner observed','Hurunui calculated')
 ylabel('Sea level [mLVD]')
 
 %% Calculate wave parameters
+
+% Offshore wave angle relative to beach
 WaveTS.Angle = angleDiff(deg2rad(Config.ShoreNormalDir), deg2rad(WaveTS.DirDeg));
+OnshoreWaves = WaveTS.Angle>-pi/2 & WaveTS.Angle<pi/2;
+
+% Long shore transport potential
 % Qs = K*H^(12/5)*T(1/5)*(cos(theta))^(6/5)*sin(theta);
 % Ashton, Murray (2006) eq5
-OnshoreWaves = WaveTS.Angle>-pi/2 & WaveTS.Angle<pi/2;
 WaveTS.LstPot = zeros(size(WaveTS,1),1);
 WaveTS.LstPot(OnshoreWaves) = WaveTS.HsM(OnshoreWaves).^(12/5) .* ...
                               WaveTS.TsSec(OnshoreWaves).^(1/5) .* ...
                               (cos(WaveTS.Angle(OnshoreWaves))).^(6/5) .* ...
                               sin (WaveTS.Angle(OnshoreWaves));
+
+% Runup (Stockdon et al 2006)
+% first calc deep water wavelength based on linear dispersion relationship
+WaveTS.L0p = (Gravity .* WaveTS.TpeakSec.^2) ./ (2*pi);
+WaveTS.Runup1 = 1.1 * (0.35 * Config.Beachslope * (WaveTS.HsM .* WaveTS.L0p).^0.5 + ...
+                       (WaveTS.HsM .* WaveTS.L0p * (0.563 * Config.Beachslope^2 + 0.004)).^0.5 / 2);
+                  
+% Runup (Poate et al 2016 eq11)
+WaveTS.Runup2 = 0.49 * Config.Beachslope^0.5 * WaveTS.TzSec .* WaveTS.HsM;
+
 
 clear OnshoreWaves
 
@@ -232,17 +249,32 @@ histogram(WaveTS.DirDeg)
 xlabel('Wave approach direction (degrees)')
 hold on 
 plot(repmat(Config.ShoreNormalDir,[2,1]),ylim')
+
 figure
 histogram(rad2deg(WaveTS.Angle))
 xlim([-90,90])
 xlabel('Wave approach angle (degrees)')
+
 figure
 plot(WaveTS.Date,WaveTS.LstPot)
 ylabel('Longshore transport potential')
+
 figure
 histogram(WaveTS.LstPot)
 plot(WaveTS.Date,cumsum(WaveTS.LstPot))
 ylabel('Cumulative longshore transport potential')
+
+figure
+subplot(2,1,1)
+histogram(WaveTS.Runup1,'BinWidth',0.2)
+xlim([0,10])
+ylim([0,6000])
+xlabel('Runup Stockdon et al (2006)')
+subplot(2,1,2)
+histogram(WaveTS.Runup2,'BinWidth',0.2)
+xlim([0,10])
+ylim([0,6000])
+xlabel('Runup Poate et al (2016)')
 
 %% Interpolate data onto same timesteps
 LagoonTS.Qin = interp1(RiverTS.DateTime,...
@@ -263,6 +295,12 @@ LagoonTS.WaveAngle = interp1(WaveTS.Date,...
 LagoonTS.LstPot = interp1(WaveTS.Date,...
                           WaveTS.LstPot,...
                           LagoonTS.DateTime);
+LagoonTS.Runup1 = interp1(WaveTS.Date,...
+                         WaveTS.Runup1,...
+                         LagoonTS.DateTime);
+LagoonTS.Runup2 = interp1(WaveTS.Date,...
+                          WaveTS.Runup2,...
+                          LagoonTS.DateTime);
 
 figure
 plot(LagoonTS.DateTime, LagoonTS{:,{'WL','SeaLevel'}});
@@ -278,6 +316,16 @@ plot(LagoonTS.DateTime,LagoonTS{:,{'Qin','Qout'}});
 datetickzoom('x')
 ylabel('Flow [m^3/s]')
 legend('Inflow','Outflow')
+
+%% Calculate Overwash Potential (Matias et al 2012)
+LagoonTS.OP1 = max(LagoonTS.SeaLevel + LagoonTS.Runup1 - Config.CrestHeight, 0);
+LagoonTS.OP2 = max(LagoonTS.SeaLevel + LagoonTS.Runup2 - Config.CrestHeight, 0);
+
+figure
+plot(LagoonTS.DateTime,LagoonTS{:,{'OP1','OP2'}});
+datetickzoom('x')
+ylabel('Overtopping potential (m)')
+legend('Stockdon et al 2006','Poate et al 2016')
 
 %% Save lagoon TS
 writetable(LagoonTS,'outputs\LagoonTS.csv')
@@ -303,7 +351,7 @@ ExitFlag = nan(size(TestTimeSteps,2),1);
 parfor i = TestTimeSteps;
 %for i=100:1000:5100;
     
-    % Set up the optimisatin inputs
+    % Set up the optimisation inputs
     meanT(i,1) = mean(CropTS.DateTime(i*48-47:i*48));
     Q = CropTS.Qout(i*48-47:i*48);
     E_us = CropTS.WL(i*48-47:i*48);

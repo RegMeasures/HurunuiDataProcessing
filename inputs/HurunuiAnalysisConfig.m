@@ -88,3 +88,9 @@ ShorelineShp = 'AlongshoreMeasure';
 Shoreline = m_shaperead(ShorelineShp);
 Config.Shoreline = Shoreline.ncst{1,1};
 clear ShorelineShp Shoreline
+
+% Beachface slope
+Config.Beachslope = 0.13;
+
+% Barrier crest height
+Config.CrestHeight = 3.9;

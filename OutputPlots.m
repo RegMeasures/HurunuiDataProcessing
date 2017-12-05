@@ -201,6 +201,7 @@ text(ax(2), datenum(XRange(1)+days(30)), 735 * scale -5-mdp+ChanOffset, ...
        
 % plot lagoon width
 TPlotDates = repmat(datenum(ShortlistPhotos.UniqueTime), [5, 1]);
+T4 = permute(ShortlistPhotos.OffsetOK(:,4,:),[1,3,2]); T5 = T4(:);
 T5 = permute(ShortlistPhotos.OffsetOK(:,5,:),[1,3,2]); T5 = T5(:);
 T6 = permute(ShortlistPhotos.OffsetOK(:,6,:),[1,3,2]); T6 = T6(:);
 T7 = permute(ShortlistPhotos.OffsetOK(:,7,:),[1,3,2]); T7 = T7(:);
