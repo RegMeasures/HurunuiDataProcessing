@@ -259,6 +259,7 @@ end
 ShortlistPhotos.OffsetOK(OffsetOK) = ShortlistPhotos.Offsets(OffsetOK);
 
 save('outputs\ShortlistPhotos.mat','ShortlistPhotos','-v7.3')
+% ShortlistPhotos.WetBdy = []; save('ShortlistPhotos_small.mat','ShortlistPhotos');
 
 clear WindowSize OffsetThreshold PropThreshold ProportionOK OffsetOK
 
@@ -281,12 +282,12 @@ for TransectNo = 1:13 %size(ShortlistPhotos.Offsets,2);
     set(gca, 'YTick', 0:50:250)
     legend([AllDataH(1), QADataH(1)], ...
            {'All width data','Width data passing QA/consistency check'})
-    if TransectNo == 1
-        export_fig 'outputs\Offsets.pdf' -pdf
-    else
-        export_fig 'outputs\Offsets.pdf' -pdf -append
-    end
-    close
+%     if TransectNo == 1
+%         export_fig 'outputs\Offsets.pdf' -pdf
+%     else
+%         export_fig 'outputs\Offsets.pdf' -pdf -append
+%     end
+%     close
 end
 clear TransectNo AllDataH QADataH
 
