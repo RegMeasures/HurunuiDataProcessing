@@ -43,11 +43,11 @@ hold(MapAx,'off')
 WetBdy = [WetBdy1; ...
           nan(1,2); ...
           WetBdy2];
-Transects = m_shaperead('100mTransects_NZTM');
-Transects = Transects.ncst(23:39);
-Transects = cellfun(@flipud, Transects, 'UniformOutput', false);
+% Transects = m_shaperead('100mTransects_NZTM');
+% Transects = Transects.ncst(23:39);
+% Transects = cellfun(@flipud, Transects, 'UniformOutput', false);
 hold(MapAx,'on')
-[Offsets, OffsetsH] = measureOffsets(WetBdy,Transects,true,MapAx);
+[Offsets, OffsetsH] = measureOffsets(WetBdy,Config.Transects,true,MapAx);
 hold(MapAx,'off')
 
 % Tidy up the plot for export

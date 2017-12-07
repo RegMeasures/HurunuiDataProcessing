@@ -52,86 +52,31 @@ V_dGrayThresh = 5;
 FineSearchMax = +5;
 
 %% identify cliff edge
-
-% extract horizontal search zone
-RGBclip = RGBimage(H_YPixel-H_YBand:H_YPixel+H_YBand,H_XPixelMin:H_XPixelMax,:);
-RGBclip = mean(RGBclip);
-HSVclip = permute(rgb2hsv(RGBclip),[2,3,1]);
-dH = min([abs(HSVclip(1:end-1,1)-HSVclip(2:end,1)),...
-          abs(HSVclip(1:end-1,1)-HSVclip(2:end,1)+1.0),...
-          abs(HSVclip(1:end-1,1)-HSVclip(2:end,1)-1.0)],[],2);
-dS = abs(HSVclip(1:end-1,2)-HSVclip(2:end,2));
-dV = abs(HSVclip(1:end-1,3)-HSVclip(2:end,3))/300;
-dSV = dH .* dS .* dV;
-
-% identify cliff edge in search zone
-dH = medfilt1(dH,H_FilterRadius);
-dS = medfilt1(dS,H_FilterRadius);
-dV = medfilt1(dV,H_FilterRadius);
-dSV = dS .* dV;
-
-% primary search
-H_EdgeIni = find(dSV > H_dSVthresh, 1);
-while isempty(H_EdgeIni) 
-    %warning('no cliff edge identified in MeasureTwist1, halving H_dHSVthresh')
-    H_dSVthresh = H_dSVthresh/2;
-    H_EdgeIni = find(dSV > H_dSVthresh, 1);
-    if sum(dSV) == 0
-        Twist = nan(1,2);
-        Edge = nan(1,2);
-        return
-    end
-end
-
-% find peak near this location
-H_Edge = H_EdgeIni;
-while dSV(H_Edge+1) > dSV(H_Edge) && H_Edge <= H_EdgeIni +FineSearchMax
-    H_Edge = H_Edge+1;
-end
-
-% apply relevant offset to identified edge
-H_Edge = H_Edge + H_XPixelMin - 1;
+H_Edge = findCliff(RGBimage, H_YPixel, H_YBand, H_XPixelMin, ...
+                             H_XPixelMax, H_dSVthresh, H_FilterRadius, ...
+                             FineSearchMax);
 
 % initial twist calculation with no accounting for lens distortion
 H_Twist = H_Edge - H_CalibEdge;
 
 %% identify horizon edge
+V_Edge = findHorizon(RGBimage, V_XPixel + H_Twist, V_XBand, ...
+                               V_YPixelMin,V_YPixelMax, V_FilterRadius);
 
-% extract vertical search zone
-RGBclip = RGBimage(V_YPixelMin:V_YPixelMax, ...
-                   V_XPixel+H_Twist-V_XBand:min(V_XPixel+H_Twist+V_XBand,end),:);
+% Original twist calculation with no accounting for lens distortion
+V_Twist =  V_Edge - V_CalibEdge;
 
-% convert to grayscale
-GrayClip = rgb2gray(RGBclip);
+%% update cliff edge calc
+H_Edge = findCliff(RGBimage, H_YPixel + V_Twist, H_YBand, H_XPixelMin, ...
+                             H_XPixelMax, H_dSVthresh, H_FilterRadius, ...
+                             FineSearchMax);
 
-% horizontally average
-GrayLine = mean(GrayClip,2);
+% initial twist calculation with no accounting for lens distortion
+H_Twist = H_Edge - H_CalibEdge;
 
-% median filter
-GrayLine = medfilt1(GrayLine,V_FilterRadius);
-
-% calc gradient
-dGray = abs(GrayLine(1:end-1)-GrayLine(2:end));
-
-% % find first threshold crossing
-% V_EdgeIni = find(dGray > V_dGrayThresh, 1);
-% while isempty(V_EdgeIni)
-%     warning('no horizon edge identified in MeasureTwist1, halving V_dGrayThresh')
-%     V_dGrayThresh = V_dGrayThresh/2;
-%     V_EdgeIni = find(dGray > V_dGrayThresh, 1);
-% end
-% 
-% % find peak near this location
-% V_Edge = V_EdgeIni;
-% while dGray(V_Edge+1) > dGray(V_Edge) && V_Edge <= (V_EdgeIni +FineSearchMax)
-%     V_Edge = V_Edge+1;
-% end
-
-% find max dGray
-[~, V_Edge] = max(dGray);
-
-% apply relevant offsets to identified edge
-V_Edge = V_Edge + V_YPixelMin - 1;
+%% update horizon edge calc
+V_Edge = findHorizon(RGBimage, V_XPixel + H_Twist, V_XBand, ...
+                               V_YPixelMin,V_YPixelMax, V_FilterRadius);
 
 % Original twist calculation with no accounting for lens distortion
 V_Twist =  V_Edge - V_CalibEdge;
@@ -140,21 +85,24 @@ V_Twist =  V_Edge - V_CalibEdge;
 
 % horizontal
 [H_CalibEdge2, ~] = radialdistort(H_CalibEdge - (Resolution(1)+1)/2, ...
-                                  H_YPixel - (Resolution(2)+1)/2, ...
+                                  (Resolution(2)+1)/2 - (H_YPixel), ...
                                   k, Resolution);
 [H_Edge2, ~] = radialdistort(H_Edge - (Resolution(1)+1)/2, ...
-                             H_YPixel - (Resolution(2)+1)/2, ...
+                             (Resolution(2)+1)/2 - (H_YPixel + V_Twist), ...
                              k, Resolution);
 H_Twist2 = round(H_Edge2 - H_CalibEdge2);
 
 % vertical
-[~, V_CalibEdge2] = radialdistort(V_XPixel+H_Twist - (Resolution(1)+1)/2, ...
-                                  V_CalibEdge - (Resolution(2)+1)/2, ...
+[~, V_CalibEdge2] = radialdistort(V_XPixel - (Resolution(1)+1)/2, ...
+                                  (Resolution(2)+1)/2 - V_CalibEdge, ...
                                   k, Resolution);
-[~, V_Edge2] = radialdistort(V_XPixel+H_Twist - (Resolution(1)+1)/2, ...
-                             V_Edge - (Resolution(2)+1)/2, ...
+[~, V_Edge2] = radialdistort(V_XPixel + H_Twist - (Resolution(1)+1)/2, ...
+                             (Resolution(2)+1)/2 - V_Edge, ...
                              k, Resolution);
-V_Twist2 =  round(V_Edge2 - V_CalibEdge2);
+V_Twist2 =  round(V_Edge2 - V_CalibEdge2); 
+% Note the sign convention of V_Twist2 has been flipped relative to V_Twist 
+% as we are now working in XY space rather than row-col space.
+% Sign convention is now correct for output.
 
 % Assemble final outputs
 Edge = [H_Edge,V_Edge];
@@ -212,10 +160,10 @@ if dispPlots
     imshow(RGBimage)
     hold on
     % cliff
-    plot([H_XPixelMin,H_XPixelMax],[H_YPixel,H_YPixel],'r-')
-    plot([H_XPixelMin,H_XPixelMax],[H_YPixel-H_YBand,H_YPixel-H_YBand],'r:')
-    plot([H_XPixelMin,H_XPixelMax],[H_YPixel+H_YBand,H_YPixel+H_YBand],'r:')
-    plot([H_Edge,H_Edge],[H_YPixel-40,H_YPixel+40],'g-')
+    plot([H_XPixelMin,H_XPixelMax],[H_YPixel+V_Twist,H_YPixel+V_Twist],'r-')
+    plot([H_XPixelMin,H_XPixelMax],[H_YPixel-H_YBand,H_YPixel+V_Twist-H_YBand],'r:')
+    plot([H_XPixelMin,H_XPixelMax],[H_YPixel+H_YBand,H_YPixel+V_Twist+H_YBand],'r:')
+    plot([H_Edge,H_Edge],[H_YPixel+V_Twist-40,H_YPixel+V_Twist+40],'g-')
     plot([H_CalibEdge,H_CalibEdge],[H_YPixel-40,H_YPixel+40],'r-')
     % horizon
     plot([V_XPixel+H_Twist,V_XPixel+H_Twist],[V_YPixelMin,V_YPixelMax],'r-')
@@ -223,8 +171,113 @@ if dispPlots
     plot([V_XPixel+H_Twist+V_XBand,V_XPixel+H_Twist+V_XBand],[V_YPixelMin,V_YPixelMax],'r:')
     plot([V_XPixel+H_Twist-40,V_XPixel+H_Twist+40],[V_Edge,V_Edge],'g-')
     plot([V_XPixel+H_Twist-40,V_XPixel+H_Twist+40],[V_CalibEdge,V_CalibEdge],'r-')
+    
+    % undistorted:
+    % Create grid of pixel positions
+    [PixelCol, PixelRow] = meshgrid(1:Resolution(1),1:Resolution(2));
+    % Make Pixel Positions relative to image center
+    PixelX = PixelCol - (Resolution(1)+1)/2;
+    PixelY = - (PixelRow - (Resolution(2)+1)/2);
+    % Correct pixel positions for lens distortion
+    [PixelX, PixelY] = radialdistort(PixelX, PixelY, k, Resolution);
+    % plot
+    figure
+    surf(PixelX, PixelY, zeros(size(PixelX)),RGBimage,'EdgeColor',...
+         'none','FaceColor','texturemap')
+    view(2)
+    axis equal
+    [X2,Y2] = radialdistort([V_XPixel+H_Twist - (Resolution(1)+1)/2, ...
+                             H_Edge - (Resolution(1)+1)/2], ...
+                            [(Resolution(2)+1)/2 - V_Edge, ...
+                             (Resolution(2)+1)/2 - (H_YPixel+V_Twist)], ...
+                            k, Resolution);
+    hold on
+    plot(X2,Y2,'rx')
+    
 end
 
 end
 
+function H_Edge = findCliff(RGBimage, H_YPixel, H_YBand, H_XPixelMin, ...
+                            H_XPixelMax, H_dSVthresh, H_FilterRadius, ...
+                            FineSearchMax)
 
+    % extract horizontal search zone
+    RGBclip = RGBimage(H_YPixel-H_YBand:H_YPixel+H_YBand,H_XPixelMin:H_XPixelMax,:);
+    RGBclip = mean(RGBclip);
+    HSVclip = permute(rgb2hsv(RGBclip),[2,3,1]);
+    dH = min([abs(HSVclip(1:end-1,1)-HSVclip(2:end,1)),...
+              abs(HSVclip(1:end-1,1)-HSVclip(2:end,1)+1.0),...
+              abs(HSVclip(1:end-1,1)-HSVclip(2:end,1)-1.0)],[],2);
+    dS = abs(HSVclip(1:end-1,2)-HSVclip(2:end,2));
+    dV = abs(HSVclip(1:end-1,3)-HSVclip(2:end,3))/300;
+    % dSV = dH .* dS .* dV;
+
+    % identify cliff edge in search zone
+    % dH = medfilt1(dH,H_FilterRadius);
+    dS = medfilt1(dS,H_FilterRadius);
+    dV = medfilt1(dV,H_FilterRadius);
+    dSV = dS .* dV;
+
+    % primary search
+    H_EdgeIni = find(dSV > H_dSVthresh, 1);
+    while isempty(H_EdgeIni) 
+        %warning('no cliff edge identified in MeasureTwist1, halving H_dHSVthresh')
+        H_dSVthresh = H_dSVthresh/2;
+        H_EdgeIni = find(dSV > H_dSVthresh, 1);
+        if sum(dSV) == 0
+            H_Edge = -999;
+            return
+        end
+    end
+
+    % find peak near this location
+    H_Edge = H_EdgeIni;
+    while dSV(H_Edge+1) > dSV(H_Edge) && H_Edge <= H_EdgeIni +FineSearchMax
+        H_Edge = H_Edge+1;
+    end
+
+    % apply relevant offset to identified edge
+    H_Edge = H_Edge + H_XPixelMin - 1;
+
+end
+
+function V_Edge = findHorizon(RGBimage, V_XPixel, V_XBand, ...
+                              V_YPixelMin,V_YPixelMax, V_FilterRadius)
+
+    % extract vertical search zone
+    RGBclip = RGBimage(V_YPixelMin:V_YPixelMax, ...
+                       V_XPixel-V_XBand:min(V_XPixel+V_XBand,end),:);
+
+    % convert to grayscale
+    GrayClip = rgb2gray(RGBclip);
+
+    % horizontally average
+    GrayLine = mean(GrayClip,2);
+
+    % median filter
+    GrayLine = medfilt1(GrayLine,V_FilterRadius);
+
+    % calc gradient
+    dGray = abs(GrayLine(1:end-1)-GrayLine(2:end));
+
+    % % find first threshold crossing
+    % V_EdgeIni = find(dGray > V_dGrayThresh, 1);
+    % while isempty(V_EdgeIni)
+    %     warning('no horizon edge identified in MeasureTwist1, halving V_dGrayThresh')
+    %     V_dGrayThresh = V_dGrayThresh/2;
+    %     V_EdgeIni = find(dGray > V_dGrayThresh, 1);
+    % end
+    % 
+    % % find peak near this location
+    % V_Edge = V_EdgeIni;
+    % while dGray(V_Edge+1) > dGray(V_Edge) && V_Edge <= (V_EdgeIni +FineSearchMax)
+    %     V_Edge = V_Edge+1;
+    % end
+
+    % find max dGray
+    [~, V_Edge] = max(dGray);
+    
+    % apply relevant offsets to identified edge
+    V_Edge = V_Edge + V_YPixelMin - 1;
+end

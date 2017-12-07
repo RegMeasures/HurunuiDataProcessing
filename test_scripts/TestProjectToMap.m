@@ -8,6 +8,10 @@ addpath(genpath('..\inputs'))
 % Read input parameters
 Config = HurunuiAnalysisConfig;
 
+% Remove masks for test purposes
+Config.FgBgMask1 = false(size(Config.FgBgMask1));
+Config.FgBgMask2 = false(size(Config.FgBgMask2));
+
 % get screensize for plot setups
 ScrSz = get(groot, 'ScreenSize');
 
@@ -64,14 +68,14 @@ LagoonWE = SurveyPts(3:108,:);
 MouthWE = SurveyPts(117:131,:);
 WL = mean(LagoonWE.Elevation);
 
-Config.FgBgMask1 = false(size(Config.FgBgMask1));
-Config.FgBgMask2 = false(size(Config.FgBgMask2));
-
 % run the test and plot all figures
 [Twist,WetBdy,Offsets] = ...
     testProjectToMapLooper(Config,TestImage1,TestImage2,WL, ...
                            [MouthWE.Easting, MouthWE.Northing; ...
                             LagoonWE.Easting, LagoonWE.Northing]);
+                        
+% write projected outputs to GIS
+imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\15-10-06_1530')
 
 %% Project image 2
 
@@ -89,6 +93,9 @@ WatersEdge = WatersEdge.ncst{1,1};
 % run the test and plot all figures
 testProjectToMapLooper(Config, TestImage1, TestImage2, WL, WatersEdge)
 
+% write projected outputs to GIS
+imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\15-08-26_1430')
+
 %% Project image 3
 
 % load test image
@@ -105,6 +112,9 @@ WatersEdge = [cell2mat(WatersEdge.ncst(1:77,1)); nan(1,2); cell2mat(WatersEdge.n
 % run the test and plot all figures
 testProjectToMapLooper(Config, TestImage1, TestImage2, WL, WatersEdge)
 
+% write projected outputs to GIS
+imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\17-05-24_1245')
+
 %% Project image 4
 
 %NEED TO UPDATE TO 1:30pm IMAGE (AND WL) WHEN AVAILABLE
@@ -120,15 +130,15 @@ WL = 2.647 + Config.LagoonOffset;
 WatersEdge = m_shaperead(fullfile(Config.DataFolder,'GIS\Survey\2017-07-26 bathy&RTK\2017-07-26_Survey_WatersEdge'));
 WatersEdge = cell2mat(WatersEdge.ncst);
 
-Config.Cam1.Roll = 2.7;
-Config.Cam2.Roll = 0.3;
-Config.Cam2.k    = +0.335;
-
-
+% Config.Cam1.Roll = 2.7;
+% Config.Cam2.Roll = 0.3;
+% Config.Cam2.k    = +0.335;
 
 % run the test and plot all figures
-testProjectToMapLooper(Config,TestImage1,TestImage2,WL, ...
-                       WatersEdge)
+Twist = testProjectToMapLooper(Config,TestImage1, TestImage2, WL, WatersEdge);
+
+% write projected outputs to GIS
+imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\17-07-26_0915');
                    
 %% Buzz saw space-for-time substituion example
 % load test image

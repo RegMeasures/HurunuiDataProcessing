@@ -31,16 +31,20 @@ for TranNo = 1:size(Transects)
     C = Transects{TranNo}(1,2) - M * Transects{TranNo}(1,1);
     [Xint,Yint] = lineCrossings (WetBdy(:,1), WetBdy(:,2), M, C);
     
-    % if they cross then calc offset to outermost crossing
+    % if they cross
     if ~isempty(Xint)
+        %  calc offset to all crossings
         CrossingDist = sort(sqrt((Xint - Transects{TranNo}(1,1)).^2 + ...
                                  (Yint - Transects{TranNo}(1,2)).^2), ...
                             1, 'descend');
-        Offsets(1, TranNo, 1:min(MaxIntersections, ...
-                                 size(CrossingDist,1))) = ...
-            permute(CrossingDist(1:min(MaxIntersections, ...
-                                       size(CrossingDist,1))), ...
-            [3,2,1]);
+        % store "MaxIntersections" crossings
+        if size(CrossingDist,1)>MaxIntersections
+            CrossingSelection = [1:MaxIntersections-1,size(CrossingDist,1)];
+        else
+            CrossingSelection = 1:min(MaxIntersections, size(CrossingDist,1));
+        end
+        Offsets(1, TranNo, 1:size(CrossingSelection,2)) = ...
+            permute(CrossingDist(CrossingSelection), [3,2,1]);
     end
 end
 

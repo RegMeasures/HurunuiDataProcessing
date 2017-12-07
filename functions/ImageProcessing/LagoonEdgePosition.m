@@ -16,7 +16,13 @@ function [Twist, WetBdy] = LagoonEdgePosition(PhotoFileName, WL, Cam, ...
 %                      ProjectToMap for details)
 %      FGbGMask      = Mask for foreground/background areas of input images
 %                      (see WetDry2 for details)
-%      
+%      SeedPixel     = Pixel coordinates of wet location to identify
+%                      polygon corresponding to lagoon water after image 
+%                      segmentation
+%      Twist         = Optional: Twist if it has already been calculated
+%                      (to prevent unneccesary rework)
+%      WetBdy        = Optional: WetBdy if it has already been calculated
+%                      (to prevent unneccesary rework)
 %
 %   See also: MEASURETWIST1, WETDRY2, PROJECTTOMAP, PARFOR
 
