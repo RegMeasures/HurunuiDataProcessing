@@ -41,8 +41,8 @@ SmoothSigma = 2     ;% 3      2      1
 %% Twist Mask and WetXY to line up with twisted image 
 % (we do it this way round as the distortion correction needs to be on the raw image)
 %FgBgMask = imtranslate(FgBgMask,Twist,'FillValues',1);
-FgBgMask = logical(simpleTranslate(FgBgMask,Twist,1));
-SeedPixel = SeedPixel + Twist;
+FgBgMask = logical(simpleTranslate(FgBgMask,Twist([1,2]),1));
+SeedPixel = SeedPixel + Twist([1,2]);
 
 %% mask Image to remove foreground and background
 MaskedImage = im2single(RGBImage);

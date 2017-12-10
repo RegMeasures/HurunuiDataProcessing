@@ -12,7 +12,9 @@ normfac = sqrt(sum(((Resolution-1)/2).^2));
 r = r/normfac;
 
 % Apply distortion
-s = r .* (1 + k .* (r.^2));
+s = r .* (1 + k(1) .* (r.^2) + k(2) .* (r.^3));
+% b=0.8;
+% s = r .* (tan(r.*b)./(r.*b));
 
 % Remove normalisation
 s2 = s * normfac;
@@ -22,7 +24,8 @@ s2 = s * normfac;
 
 % additional rescaling to preserve width
 ScaledMid = ((Resolution(1)-1)/2)/normfac;
-ScaleFac = ScaledMid/(ScaledMid * (1 + k .* (ScaledMid^2)));
+ScaleFac = ScaledMid/(ScaledMid * (1 + k(1) .* (ScaledMid^2) + k(2) .* (ScaledMid^3)));
+% ScaleFac = ScaledMid/(ScaledMid * (tan(ScaledMid*b)/(ScaledMid*b)));
 x2=x2*ScaleFac;
 y2=y2*ScaleFac;
 

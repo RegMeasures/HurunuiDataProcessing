@@ -30,6 +30,7 @@ end
 % note: these are based on Hurunui1_15-10-07_15-28-48-75.jpg
 H_CalibEdge = 2329; %2335;
 V_CalibEdge = 153;
+V2_CalibEdge = 113;
 
 % horizontal (cliff) search params
 H_XPixelMin = 2000; % horizontal search range for cliff edge [px]
@@ -46,6 +47,14 @@ V_YPixelMax  = 200;
 V_XBand      = 20;
 V_FilterRadius = 5;
 V_dGrayThresh = 5;
+
+% vertical (horizon) search parameters
+V2_XPixel     = 300;
+V2_YPixelMin  = 50;
+V2_YPixelMax  = 150;
+V2_XBand      = 20;
+V2_FilterRadius = 5;
+V2_dGrayThresh = 5;
 
 % secondary/fine search parameters
 %FineSearchMin = 0; 
@@ -81,33 +90,60 @@ V_Edge = findHorizon(RGBimage, V_XPixel + H_Twist, V_XBand, ...
 % Original twist calculation with no accounting for lens distortion
 V_Twist =  V_Edge - V_CalibEdge;
 
+%% LH horizon edge for roll
+V2_Edge = findHorizon(RGBimage, V2_XPixel, V2_XBand, ...
+                                V2_YPixelMin,V2_YPixelMax, V2_FilterRadius);
+
 %% Calculate Twist accounting for lens distortion
 
 % horizontal
 [H_CalibEdge2, ~] = radialdistort(H_CalibEdge - (Resolution(1)+1)/2, ...
                                   (Resolution(2)+1)/2 - (H_YPixel), ...
                                   k, Resolution);
-[H_Edge2, ~] = radialdistort(H_Edge - (Resolution(1)+1)/2, ...
+[H_Edge2, H_Y2] = radialdistort(H_Edge - (Resolution(1)+1)/2, ...
                              (Resolution(2)+1)/2 - (H_YPixel + V_Twist), ...
                              k, Resolution);
-H_Twist2 = round(H_Edge2 - H_CalibEdge2);
+H_Twist2 = H_Edge2 - H_CalibEdge2;
 
 % vertical
-[~, V_CalibEdge2] = radialdistort(V_XPixel - (Resolution(1)+1)/2, ...
+[V_CalibX2, V_CalibEdge2] = radialdistort(V_XPixel - (Resolution(1)+1)/2, ...
                                   (Resolution(2)+1)/2 - V_CalibEdge, ...
                                   k, Resolution);
-[~, V_Edge2] = radialdistort(V_XPixel + H_Twist - (Resolution(1)+1)/2, ...
+[V_X2, V_Edge2] = radialdistort(V_XPixel + H_Twist - (Resolution(1)+1)/2, ...
                              (Resolution(2)+1)/2 - V_Edge, ...
                              k, Resolution);
-V_Twist2 =  round(V_Edge2 - V_CalibEdge2); 
+V_Twist2 =  V_Edge2 - V_CalibEdge2; 
 % Note the sign convention of V_Twist2 has been flipped relative to V_Twist 
 % as we are now working in XY space rather than row-col space.
 % Sign convention is now correct for output.
 
+% roll (clockwise positive)
+[V2_CalibX2, V2_CalibEdge2] = radialdistort(V2_XPixel - (Resolution(1)+1)/2, ...
+                                  (Resolution(2)+1)/2 - V2_CalibEdge, ...
+                                  k, Resolution);
+[V2_X2, V2_Edge2] = radialdistort(V2_XPixel - (Resolution(1)+1)/2, ...
+                                  (Resolution(2)+1)/2 - V2_Edge, ...
+                                  k, Resolution);
+RollAngleCalib = atand((V2_CalibEdge2 - V_CalibEdge2) / ...
+                       (V_CalibX2 - V2_CalibX2));
+RollAngleMeas = atand((V2_Edge2 - V_Edge2) / ...
+                      (V_X2 - V2_X2));
+Roll = RollAngleMeas - RollAngleCalib;
+
+% Adjust V_Twist2 for roll (i.e. vertical twist at image center)
+V_Twist2 = round(V_Twist2 - ...
+                 (sqrt(V_X2^2 + V_Edge2^2) * ...
+                  sind(atand(V_Edge2/V_X2) - Roll) - V_Edge2));
+
+% Adjust H_Twist2 for roll
+H_Twist2 = round(H_Twist2 - ...
+                 (sqrt(H_Edge2^2 + H_Y2^2) * ...
+                  cosd(atand(H_Y2/H_Edge2) - Roll) - H_Edge2));
+
 % Assemble final outputs
 Edge = [H_Edge,V_Edge];
 %Twist = [H_Twist,V_Twist];
-Twist = [H_Twist2,V_Twist2];
+Twist = [H_Twist2,V_Twist2,Roll];
 
 %% Test plots
 if dispPlots
@@ -161,39 +197,56 @@ if dispPlots
     hold on
     % cliff
     plot([H_XPixelMin,H_XPixelMax],[H_YPixel+V_Twist,H_YPixel+V_Twist],'r-')
-    plot([H_XPixelMin,H_XPixelMax],[H_YPixel-H_YBand,H_YPixel+V_Twist-H_YBand],'r:')
-    plot([H_XPixelMin,H_XPixelMax],[H_YPixel+H_YBand,H_YPixel+V_Twist+H_YBand],'r:')
+    plot([H_XPixelMin,H_XPixelMax],[H_YPixel+V_Twist-H_YBand,H_YPixel+V_Twist-H_YBand],'r:')
+    plot([H_XPixelMin,H_XPixelMax],[H_YPixel+V_Twist+H_YBand,H_YPixel+V_Twist+H_YBand],'r:')
     plot([H_Edge,H_Edge],[H_YPixel+V_Twist-40,H_YPixel+V_Twist+40],'g-')
-    plot([H_CalibEdge,H_CalibEdge],[H_YPixel-40,H_YPixel+40],'r-')
+    plot([H_CalibEdge,H_CalibEdge],[H_YPixel+V_Twist-40,H_YPixel+V_Twist+40],'r-')
     % horizon
     plot([V_XPixel+H_Twist,V_XPixel+H_Twist],[V_YPixelMin,V_YPixelMax],'r-')
     plot([V_XPixel+H_Twist-V_XBand,V_XPixel+H_Twist-V_XBand],[V_YPixelMin,V_YPixelMax],'r:')
     plot([V_XPixel+H_Twist+V_XBand,V_XPixel+H_Twist+V_XBand],[V_YPixelMin,V_YPixelMax],'r:')
     plot([V_XPixel+H_Twist-40,V_XPixel+H_Twist+40],[V_Edge,V_Edge],'g-')
     plot([V_XPixel+H_Twist-40,V_XPixel+H_Twist+40],[V_CalibEdge,V_CalibEdge],'r-')
+    % horizon 2
+    plot([V2_XPixel,V2_XPixel],[V2_YPixelMin,V2_YPixelMax],'r-')
+    plot([V2_XPixel-V2_XBand,V2_XPixel-V2_XBand],[V2_YPixelMin,V2_YPixelMax],'r:')
+    plot([V2_XPixel+V2_XBand,V2_XPixel+V2_XBand],[V2_YPixelMin,V2_YPixelMax],'r:')
+    plot([V2_XPixel-40,V2_XPixel+40],[V2_Edge,V2_Edge],'g-')
+    plot([V2_XPixel-40,V2_XPixel+40],[V2_CalibEdge,V2_CalibEdge],'r-')
     
-    % undistorted:
-    % Create grid of pixel positions
-    [PixelCol, PixelRow] = meshgrid(1:Resolution(1),1:Resolution(2));
-    % Make Pixel Positions relative to image center
-    PixelX = PixelCol - (Resolution(1)+1)/2;
-    PixelY = - (PixelRow - (Resolution(2)+1)/2);
-    % Correct pixel positions for lens distortion
-    [PixelX, PixelY] = radialdistort(PixelX, PixelY, k, Resolution);
-    % plot
-    figure
-    surf(PixelX, PixelY, zeros(size(PixelX)),RGBimage,'EdgeColor',...
-         'none','FaceColor','texturemap')
-    view(2)
-    axis equal
-    [X2,Y2] = radialdistort([V_XPixel+H_Twist - (Resolution(1)+1)/2, ...
-                             H_Edge - (Resolution(1)+1)/2], ...
-                            [(Resolution(2)+1)/2 - V_Edge, ...
-                             (Resolution(2)+1)/2 - (H_YPixel+V_Twist)], ...
-                            k, Resolution);
-    hold on
-    plot(X2,Y2,'rx')
-    
+%     % undistorted:
+%     % Create grid of pixel positions
+%     [PixelCol, PixelRow] = meshgrid(1:Resolution(1),1:Resolution(2));
+%     % Make Pixel Positions relative to image center
+%     PixelX = PixelCol - (Resolution(1)+1)/2;
+%     PixelY = - (PixelRow - (Resolution(2)+1)/2);
+%     % Correct pixel positions for lens distortion
+%     [PixelX, PixelY] = radialdistort(PixelX, PixelY, k, Resolution);
+%     % plot
+%     figure
+%     surf(PixelX, PixelY, zeros(size(PixelX)),RGBimage,'EdgeColor',...
+%          'none','FaceColor','texturemap')
+%     view(2)
+%     axis equal
+%     [X2,Y2] = radialdistort([H_Edge - (Resolution(1)+1)/2, ...
+%                              V_XPixel+H_Twist - (Resolution(1)+1)/2, ...
+%                              V2_XPixel - (Resolution(1)+1)/2], ...
+%                             [(Resolution(2)+1)/2 - (H_YPixel+V_Twist), ...
+%                              (Resolution(2)+1)/2 - V_Edge, ...
+%                              (Resolution(2)+1)/2 - V2_Edge], ...
+%                             k, Resolution);
+%     hold on
+%     plot(X2,Y2,'rx')
+%     plot(X2([2,3]),Y2([2,3]),'r:')
+%     [X2,Y2] = radialdistort([H_CalibEdge - (Resolution(1)+1)/2, ...
+%                              V_XPixel - (Resolution(1)+1)/2, ...
+%                              V2_XPixel - (Resolution(1)+1)/2], ...
+%                             [(Resolution(2)+1)/2 - (H_YPixel), ...
+%                              (Resolution(2)+1)/2 - V_CalibEdge, ...
+%                              (Resolution(2)+1)/2 - V2_CalibEdge], ...
+%                             k, Resolution);
+%     plot(X2,Y2,'gx')
+%     plot(X2([2,3]),Y2([2,3]),'g:')
 end
 
 end

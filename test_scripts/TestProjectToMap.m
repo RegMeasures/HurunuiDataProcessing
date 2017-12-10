@@ -15,27 +15,6 @@ Config.FgBgMask2 = false(size(Config.FgBgMask2));
 % get screensize for plot setups
 ScrSz = get(groot, 'ScreenSize');
 
-%% Specify camera settings
-% Config.Cam1.Resolution = [2592,1944];      % Image size [across,down] (pixels)
-% Config.Cam1.Bearing    = 192.5;            % Bearing of center of image (degrees)
-% Config.Cam1.Pitch      = -21.4;            % Altitude angle of image center (usually negative as this indicates the image is looking down of horizontal)
-% Config.Cam1.Roll       = +2.03;            % Roll angle of camera (clockwise = positive)
-% Config.Cam1.ViewWidth  = 63.0;             % width of field of view (degrees)
-% Config.Cam1.Height     = 7.55 + 26.476;    % elevation of camera
-% Config.Cam1.Easting    = 1623524.9;        % Easting of camera
-% Config.Cam1.Northing   = 5249500.7;        % Northing of camera
-% Config.Cam1.k          = +0.240;           % k value for barrel distortion correction as used for lensdistort
-% 
-% Config.Cam2.Resolution = Cam1.Resolution;
-% Config.Cam2.Bearing    = 062.5;
-% Config.Cam2.Pitch      = -23.40;
-% Config.Cam2.Roll       = +0.80;
-% Config.Cam2.ViewWidth  = 67;
-% Config.Cam2.Height     = Cam1.Height;
-% Config.Cam2.Easting    = Cam1.Easting;
-% Config.Cam2.Northing   = Cam1.Northing;
-% Config.Cam2.k          = +0.325;
-
 %% try simple distortion correction with checkerboard images
 % Cam1Folder = ('E:\Hurunui\PhotoRecord\checkerboard images\camera1');
 % Cam2Folder = ('E:\Hurunui\PhotoRecord\checkerboard images\camera2');
@@ -130,10 +109,6 @@ WL = 2.647 + Config.LagoonOffset;
 WatersEdge = m_shaperead(fullfile(Config.DataFolder,'GIS\Survey\2017-07-26 bathy&RTK\2017-07-26_Survey_WatersEdge'));
 WatersEdge = cell2mat(WatersEdge.ncst);
 
-% Config.Cam1.Roll = 2.7;
-% Config.Cam2.Roll = 0.3;
-% Config.Cam2.k    = +0.335;
-
 % run the test and plot all figures
 Twist = testProjectToMapLooper(Config,TestImage1, TestImage2, WL, WatersEdge);
 
@@ -142,8 +117,8 @@ imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\17-07-26_0915');
                    
 %% Buzz saw space-for-time substituion example
 % load test image
-TestImage1 = imread('E:\Hurunui\PhotoRecord\ImageStore\2016\12\Hurunui1\Hurunui1_16-12-13_08-36-13-03.jpg');
-TestImage2 = imread('E:\Hurunui\PhotoRecord\ImageStore\2016\12\Hurunui2\Hurunui2_16-12-13_08-35-50-93.jpg');
+TestImage1 = imread(fullfile(Config.DataFolder,Config.PhotoFolder,'2016\12\Hurunui1\Hurunui1_16-12-13_08-36-13-03.jpg'));
+TestImage2 = imread(fullfile(Config.DataFolder,Config.PhotoFolder,'2016\12\Hurunui2\Hurunui2_16-12-13_08-35-50-93.jpg'));
 
 % WL at time of image, corrected to LVD
 WL = 2.354 + Config.LagoonOffset;

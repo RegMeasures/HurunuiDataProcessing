@@ -17,9 +17,10 @@ function [PixelEasting, PixelNorthing] = ...
 %         .Northing   = Northing of camera [m]
 %         .k          = k value for barrel distortion correction
 %      WaterLevel     = Lagoon Water level (mLVD)
-%      Twist          = Horizontal and vertical displacement of image
+%      Twist          = Horizontal, vertical and roll displacement of image
 %                       compared to reference image (see MeasureTwist1) 
-%                       [px across, px down] (optional, default = [0,0]).
+%                       [px across, px down, degrees roll]
+%                       (optional, default = [0,0,0]).
 %      PixelRow, PixelCol = Matrices of locations corresponding to position
 %                       in image from top left. (Optional: If not supplied
 %                       a grid covering the full image is assumed)
@@ -42,7 +43,7 @@ function [PixelEasting, PixelNorthing] = ...
 %% Set defaults
 % Twist
 if ~exist('Twist','var')||isempty(Twist)
-    Twist = [0,0];
+    Twist = [0,0,0];
 end
 
 % Create grid of pixel positions if not supplied
@@ -59,7 +60,7 @@ PixelY = - (PixelRow - (Cam.Resolution(2)+1)/2);
 [PixelX, PixelY] = radialdistort(PixelX, PixelY, Cam.k, Cam.Resolution);
 
 %% Correct pixel positions for roll
-[PixelX, PixelY] = cameraroll(PixelX, PixelY, Cam.Roll);
+[PixelX, PixelY] = cameraroll(PixelX, PixelY, Cam.Roll + Twist(3));
 
 %% Correct pixel positions for twist
 PixelX = PixelX - Twist(1);
@@ -94,11 +95,11 @@ PixelNorthing = Cam.Northing + Distance .* cosd(Bearing);
 
 %% Display projected image (optional, requires TestImage)
 if exist('TestImage','var')
-    figure
-    surf(PixelEasting,PixelNorthing,zeros(size(Bearing)),TestImage,'EdgeColor',...
-         'none','FaceColor','texturemap')
-    view(2)
-    axis equal
+%     figure
+%     surf(PixelEasting,PixelNorthing,zeros(size(Bearing)),TestImage,'EdgeColor',...
+%          'none','FaceColor','texturemap')
+%     view(2)
+%     axis equal
 end
 
 end

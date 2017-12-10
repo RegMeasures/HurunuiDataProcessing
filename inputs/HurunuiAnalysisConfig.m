@@ -61,10 +61,25 @@ Config.FgBgMask2 = FgBgMask2;
 clear FgBgMask1 FgBgMask2
 
 % Camera distortion and projection settings
-load('CamSettings')
-Config.Cam1 = Cam1;
-Config.Cam2 = Cam2;
-clear Cam1 Cam2
+Config.Cam1.Resolution = [2592,1944];      % Image size [across,down] (pixels)
+Config.Cam1.Bearing    = 192.5;            % Bearing of center of image (degrees)
+Config.Cam1.Pitch      = -21.4;            % Altitude angle of image center (usually negative as this indicates the image is looking down of horizontal)
+Config.Cam1.Roll       = +2.03;            % Roll angle of camera (clockwise = positive)
+Config.Cam1.ViewWidth  = 63.0;             % width of field of view (degrees)
+Config.Cam1.Height     = 7.55 + 26.476;    % elevation of camera
+Config.Cam1.Easting    = 1623524.9;        % Easting of camera
+Config.Cam1.Northing   = 5249500.7;        % Northing of camera
+Config.Cam1.k          = [0.15,0.08];%[+0.240,0];           % k value for barrel distortion correction as used for lensdistort
+
+Config.Cam2.Resolution = Config.Cam1.Resolution;
+Config.Cam2.Bearing    = 062.5;
+Config.Cam2.Pitch      = -23.50;
+Config.Cam2.Roll       = +0.80;
+Config.Cam2.ViewWidth  = 67;
+Config.Cam2.Height     = Config.Cam1.Height;
+Config.Cam2.Easting    = Config.Cam1.Easting;
+Config.Cam2.Northing   = Config.Cam1.Northing;
+Config.Cam2.k          = [0.1,0.21];%[+0.325,0];
 
 % Seed pixels for water ID
 Config.SeedPixel1 = [1628, 1013];
