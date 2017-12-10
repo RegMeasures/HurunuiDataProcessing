@@ -40,7 +40,7 @@ H_YBand = 20;        % search band thickness for cliff edge search [px]
 H_dSVthresh = 2e-4;% initial dHSV threshold
 H_FilterRadius = 5;
 
-% vertical (horizon) search parameters
+% RH vertical (horizon) search parameters
 V_XPixel     = 2471;
 V_YPixelMin  = 100;
 V_YPixelMax  = 200;
@@ -48,10 +48,10 @@ V_XBand      = 20;
 V_FilterRadius = 5;
 V_dGrayThresh = 5;
 
-% vertical (horizon) search parameters
+% LH vertical (horizon) search parameters
 V2_XPixel     = 300;
-V2_YPixelMin  = 50;
-V2_YPixelMax  = 150;
+V2_YPixelMin  = 85;
+V2_YPixelMax  = 145;
 V2_XBand      = 20;
 V2_FilterRadius = 5;
 V2_dGrayThresh = 5;

@@ -10,11 +10,11 @@ To do:
 - [ ] update Sumner sea level (and baro) timeseries
 - [ ] update Hurunui baro timeseries
 - [ ] QA plot to check for gaps in photo record
-- [ ] Wave data QA plot in TimeseiesAnalysis
-- [ ] fix measureTwist for Feb-March 2017 where X twist goes out of range
-- [ ] handle multiple returns when looking for offsets
+- [x] Wave data QA plot in TimeseiesAnalysis
+- [x] fix measureTwist for Feb-March 2017 where X twist goes out of range
+- [x] handle multiple returns when looking for offsets
 - [x] measure mouth position alongshore
 - [ ] output plots to pdf
-- [ ] improve cleanWetBdy so it removes the artificial edges at the edge of the 
+- [x] improve cleanWetBdy so it removes the artificial edges at the edge of the 
       frame near the camera
-- [ ] check order of twist measurement, distortion correction, etc
+- [x] check order of twist measurement, distortion correction, etc
