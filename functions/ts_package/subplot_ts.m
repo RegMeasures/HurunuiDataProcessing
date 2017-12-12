@@ -136,7 +136,7 @@ end
 
 %%ID 6th series
 if s6ind~=0
-    if s5ind==0
+    if s7ind==0
         s6end=length(varargin);
     else
         s6end=s7ind-1;
@@ -151,7 +151,7 @@ end
 
 %%ID 7th series
 if s7ind~=0
-    if s5ind==0
+    if s8ind==0
         s7end=length(varargin);
     else
         s7end=s8ind-1;
