@@ -96,14 +96,12 @@ imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\17-05-24_1245')
 
 %% Project image 4
 
-%NEED TO UPDATE TO 1:30pm IMAGE (AND WL) WHEN AVAILABLE
-
 % load test image
-TestImage1 = imread(fullfile(Config.DataFolder,Config.PhotoFolder,'2017\07\Hurunui1\Hurunui1_17-07-26_09-17-11-91.jpg'));
-TestImage2 = imread(fullfile(Config.DataFolder,Config.PhotoFolder,'2017\07\Hurunui2\Hurunui2_17-07-26_09-17-03-27.jpg'));
+TestImage1 = imread(fullfile(Config.DataFolder,Config.PhotoFolder,'2017\07\Hurunui1\Hurunui1_17-07-26_13-32-11-53.jpg'));
+TestImage2 = imread(fullfile(Config.DataFolder,Config.PhotoFolder,'2017\07\Hurunui2\Hurunui2_17-07-26_13-32-03-49.jpg'));
 
 % WL at time of image, corrected to LVD
-WL = 2.647 + Config.LagoonOffset;
+WL = 1.900 + Config.LagoonOffset;
 
 % Wateredge calibration from RTK survey
 WatersEdge = m_shaperead(fullfile(Config.DataFolder,'GIS\Survey\2017-07-26 bathy&RTK\2017-07-26_Survey_WatersEdge'));
