@@ -39,7 +39,7 @@ ScrSz = get(groot, 'ScreenSize');
 
 % load test image
 TestImage1 = imread(fullfile(Config.DataFolder,Config.PhotoFolder,'2015\10\Hurunui1\Hurunui1_15-10-06_15-28-21-50.jpg'));
-TestImage2 = imread(fullfile(Config.DataFolder,Config.PhotoFolder,'2015\10\Hurunui2\Hurunui2_15-10-06_13-28-25-74.jpg'));
+TestImage2 = imread(fullfile(Config.DataFolder,Config.PhotoFolder,'2015\10\Hurunui2\Hurunui2_15-10-06_13-43-25-75.jpg'));
 
 % load surveyed waters edge
 SurveyPts = readRtkSurveyCsv(fullfile(Config.DataFolder,'Survey\2015-10-06 barrier RTK\Survey_Pts_Beach_Barrier_Oct15.csv'));
@@ -48,7 +48,7 @@ MouthWE = SurveyPts(117:131,:);
 WL = mean(LagoonWE.Elevation);
 
 % run the test and plot all figures
-[Twist,WetBdy,Offsets] = ...
+[Twist1,Twist2,WetBdy,Offsets] = ...
     testProjectToMapLooper(Config,TestImage1,TestImage2,WL, ...
                            [MouthWE.Easting, MouthWE.Northing; ...
                             LagoonWE.Easting, LagoonWE.Northing]);
@@ -70,7 +70,8 @@ WatersEdge = m_shaperead(fullfile(Config.DataFolder,'GIS\Survey\2015-08-26 minor
 WatersEdge = WatersEdge.ncst{1,1};
 
 % run the test and plot all figures
-testProjectToMapLooper(Config, TestImage1, TestImage2, WL, WatersEdge)
+[Twist1,Twist2,WetBdy,Offsets] = ...
+    testProjectToMapLooper(Config, TestImage1, TestImage2, WL, WatersEdge)
 
 % write projected outputs to GIS
 imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\15-08-26_1430')
@@ -89,7 +90,8 @@ WatersEdge = m_shaperead(fullfile(Config.DataFolder,'\GIS\Survey\2017-05-24 barr
 WatersEdge = [cell2mat(WatersEdge.ncst(1:77,1)); nan(1,2); cell2mat(WatersEdge.ncst(79:end-2,1))];
 
 % run the test and plot all figures
-testProjectToMapLooper(Config, TestImage1, TestImage2, WL, WatersEdge)
+[Twist1,Twist2,WetBdy,Offsets] = ...
+    testProjectToMapLooper(Config, TestImage1, TestImage2, WL, WatersEdge)
 
 % write projected outputs to GIS
 imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\17-05-24_1245')
@@ -108,7 +110,8 @@ WatersEdge = m_shaperead(fullfile(Config.DataFolder,'GIS\Survey\2017-07-26 bathy
 WatersEdge = cell2mat(WatersEdge.ncst);
 
 % run the test and plot all figures
-Twist = testProjectToMapLooper(Config,TestImage1, TestImage2, WL, WatersEdge);
+[Twist1,Twist2,WetBdy,Offsets] = ...
+    testProjectToMapLooper(Config,TestImage1, TestImage2, WL, WatersEdge);
 
 % write projected outputs to GIS
 imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\17-07-26_0915');

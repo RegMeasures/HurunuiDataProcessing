@@ -1,25 +1,23 @@
-function [Twist,WetBdy,Offsets] = testProjectToMapLooper(Config,TestImage1,TestImage2,WL,SurveyPoints)
+function [Twist1,Twist2,WetBdy,Offsets] = testProjectToMapLooper(Config,TestImage1,TestImage2,WL,SurveyPoints)
 
 % get screensize for plot setups
 ScrSz = get(groot, 'ScreenSize');
 
 % Measure pole twist
-Twist = MeasureTwist1(TestImage1,Config.Cam1.k,Config.Cam1.Resolution,true);
+Twist1 = measureTwist(TestImage1,Config.Cam1,true);
+Twist2 = measureTwist(TestImage2,Config.Cam2,true);
 
 % find wet edges
 [WetMask1, WetBdy1] = WetDry2(TestImage1, Config.FgBgMask1, ...
-                              Config.SeedPixel1, Twist, false);
+                              Config.SeedPixel1, Twist1, false);
 [WetMask2, WetBdy2] = WetDry2(TestImage2, Config.FgBgMask2, ...
-                              Config.SeedPixel2, ...
-                              [Twist(1),-Twist(2),-Twist(3)], false);
+                              Config.SeedPixel2, Twist2, false);
 
 % convert WetBdys to easting northing
 [BdyEasting1, BdyNorthing1] = ...
-    ProjectToMap(Config.Cam1, WL, Twist, WetBdy1(:,1), WetBdy1(:,2));
+    ProjectToMap(Config.Cam1, WL, Twist1, WetBdy1(:,1), WetBdy1(:,2));
 [BdyEasting2, BdyNorthing2] = ...
-    ProjectToMap(Config.Cam2, WL, ...
-                 [Twist(1),-Twist(2)*Config.Cam2.ViewWidth/Config.Cam1.ViewWidth,-Twist(3)], ...
-                 WetBdy2(:,1), WetBdy2(:,2));
+    ProjectToMap(Config.Cam2, WL, Twist2, WetBdy2(:,1), WetBdy2(:,2));
 WetBdy1 = [BdyEasting1, BdyNorthing1];
 WetBdy2 = [BdyEasting2, BdyNorthing2];
 
@@ -29,12 +27,11 @@ WetBdy2 = cleanWetBdy(WetBdy2);
 
 % display projected image as surface
 figure('Position', [(ScrSz(3)/2)-700, ScrSz(4)/2-300, 1400, 400]);
-MapAx = plotProjected(TestImage1,Twist,WL,Config.Cam1,...
+MapAx = plotProjected(TestImage1, Twist1, WL, Config.Cam1, ...
                       Config.FgBgMask1,[],true);
 hold(MapAx,'on')
-plotProjected(TestImage2, ...
-              [Twist(1),-Twist(2)*Config.Cam2.ViewWidth/Config.Cam1.ViewWidth,-Twist(3)], ...
-              WL,Config.Cam2, Config.FgBgMask2, MapAx, true);
+plotProjected(TestImage2, Twist2, WL,Config.Cam2, ...
+              Config.FgBgMask2, MapAx, true);
 
 % overlay surveyed waters edge
 hold(MapAx,'on')

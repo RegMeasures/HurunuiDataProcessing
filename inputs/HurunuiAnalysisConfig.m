@@ -60,7 +60,14 @@ Config.FgBgMask1 = FgBgMask1;
 Config.FgBgMask2 = FgBgMask2;
 clear FgBgMask1 FgBgMask2
 
-% Camera distortion and projection settings
+% Seed pixels for water ID
+Config.SeedPixel1 = [1628, 1013];
+Config.SeedPixel2 = [1334, 950];
+
+% Set standard WL for selection of consistent images
+Config.StandardWL = 1.5;
+
+%% Camera distortion and projection settings
 Config.Cam1.Resolution = [2592,1944];      % Image size [across,down] (pixels)
 Config.Cam1.Bearing    = 192.5;            % Bearing of center of image (degrees)
 Config.Cam1.Pitch      = -21.4;            % Altitude angle of image center (usually negative as this indicates the image is looking down of horizontal)
@@ -81,12 +88,73 @@ Config.Cam2.Easting    = Config.Cam1.Easting;
 Config.Cam2.Northing   = Config.Cam1.Northing;
 Config.Cam2.k          = [0.1,0.21];%[+0.325,0];
 
-% Seed pixels for water ID
-Config.SeedPixel1 = [1628, 1013];
-Config.SeedPixel2 = [1334, 950];
+%% Twist search settings
 
-% Set standard WL for selection of consistent images
-Config.StandardWL = 1.5;
+% Edge positions in pixels corresponding to Twist = [0,0,0] 
+% note: these are based on Hurunui1_15-10-07_15-28-48-75.jpg
+Config.Cam1.H_CalibEdge = 2329;
+Config.Cam1.V_CalibEdge = 153;
+Config.Cam1.V2_CalibEdge = 113;
+
+% horizontal (cliff) search params
+Config.Cam1.H_XPixelMin = 2000; % horizontal search range for cliff edge [px]
+Config.Cam1.H_XPixelMax = 2450;
+Config.Cam1.H_YPixel = 550;     % vert coord of horiz search line for cliff edge [px]
+Config.Cam1.H_YBand = 20;        % search band thickness for cliff edge search [px]
+Config.Cam1.H_dSVthresh = 2e-4;  % initial dHSV threshold
+Config.Cam1.H_FilterRadius = 5;
+Config.Cam1.H_SearchDirection = 1; % 1=search L to R, 0=no search direction, -1=search R to L
+Config.Cam1.H_FineSearchMax = 5;% secondary/fine search parameters
+Config.Cam1.H_ApplyTwist = true;
+
+% RH vertical (horizon) search parameters
+Config.Cam1.V_XPixel     = 2471;
+Config.Cam1.V_YPixelMin  = 100;
+Config.Cam1.V_YPixelMax  = 200;
+Config.Cam1.V_XBand      = 20;
+Config.Cam1.V_FilterRadius = 5;
+Config.Cam1.V_ApplyTwist = true;
+
+% LH vertical (horizon) search parameters
+Config.Cam1.V2_XPixel     = 300;
+Config.Cam1.V2_YPixelMin  = 85;
+Config.Cam1.V2_YPixelMax  = 145;
+Config.Cam1.V2_XBand      = 20;
+Config.Cam1.V2_FilterRadius = 5;
+Config.Cam1.V2_ApplyTwist = false;
+
+% Edge positions in pixels corresponding to Twist = [0,0,0] 
+% note: these are based on Hurunui2_15-10-07_15-28-52-74.jpg
+Config.Cam2.H_CalibEdge = 1074;
+Config.Cam2.V_CalibEdge = 1244; %1273; %140;
+Config.Cam2.V2_CalibEdge = 1273; %1268; %46;
+
+% horizontal (fence) search params
+Config.Cam2.H_XPixelMin = 600; % horizontal search range for cliff edge [px]
+Config.Cam2.H_XPixelMax = 1100;
+Config.Cam2.H_YPixel = 1340;     % vert coord of horiz search line for cliff edge [px]
+Config.Cam2.H_YBand = 20;        % search band thickness for cliff edge search [px]
+Config.Cam2.H_dSVthresh = 2e-3;  % initial dHSV threshold
+Config.Cam2.H_FilterRadius = 20;
+Config.Cam2.H_SearchDirection = 0; % 1=search L to R, 0=no search direction, -1=search R to L
+Config.Cam2.H_FineSearchMax = +5;% secondary/fine search parameters
+Config.Cam2.H_ApplyTwist = true;
+
+% RH vertical (horizon) search parameters
+Config.Cam2.V_XPixel     = 1053; %1750; %2310;
+Config.Cam2.V_YPixelMin  = 1200; %1220; %100;
+Config.Cam2.V_YPixelMax  = 1300; %1340; %170;
+Config.Cam2.V_XBand      = 5;    %20;
+Config.Cam2.V_FilterRadius = 30;        %5
+Config.Cam2.V_ApplyTwist = true;
+
+% LH vertical (horizon) search parameters
+Config.Cam2.V2_XPixel     = 1750; %1620; %1300;
+Config.Cam2.V2_YPixelMin  = 1220; %1220; %20;
+Config.Cam2.V2_YPixelMax  = 1340; %1340; %90;
+Config.Cam2.V2_XBand      = 20;
+Config.Cam2.V2_FilterRadius = 30;        %5;
+Config.Cam2.V2_ApplyTwist = true;
 
 %% Spatial parameters
 % Transect lines
