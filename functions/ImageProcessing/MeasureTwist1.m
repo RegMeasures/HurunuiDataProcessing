@@ -64,7 +64,11 @@ FineSearchMax = +5;
 H_Edge = findCliff(RGBimage, H_YPixel, H_YBand, H_XPixelMin, ...
                              H_XPixelMax, H_dSVthresh, H_FilterRadius, ...
                              FineSearchMax);
-
+if isnan(H_Edge)
+    Twist = nan(1,3);
+    Edge = nan(1,2);
+    return
+end
 % initial twist calculation with no accounting for lens distortion
 H_Twist = H_Edge - H_CalibEdge;
 
@@ -279,7 +283,7 @@ function H_Edge = findCliff(RGBimage, H_YPixel, H_YBand, H_XPixelMin, ...
         H_dSVthresh = H_dSVthresh/2;
         H_EdgeIni = find(dSV > H_dSVthresh, 1);
         if sum(dSV) == 0
-            H_Edge = -999;
+            H_Edge = nan;
             return
         end
     end
