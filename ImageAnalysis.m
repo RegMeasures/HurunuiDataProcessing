@@ -104,7 +104,7 @@ clear ii
 % Create variables to hold outputs. 
 % (first check if they exist in ShortlistPhotos table)
 if ~ismember('Twist', ShortlistPhotos.Properties.VariableNames)
-    ShortlistPhotos.Twist = nan(height(ShortlistPhotos),2);
+    ShortlistPhotos.Twist = nan(height(ShortlistPhotos),3);
 end
 if ~ismember('WetBdy', ShortlistPhotos.Properties.VariableNames)
     ShortlistPhotos.WetBdy = cell(height(ShortlistPhotos),1);
@@ -144,7 +144,6 @@ while ii <= NoToProcess
                               Photos.FileSubDir(Cam2Photos), ...
                               strcat(Photos.FileName(Cam2Photos), '.jpg'));
     Twist1 = ShortlistPhotos.Twist(ThisLoop,:);
-    Twist2 = [Twist1(:,1),Twist1(:,2)];
     WetBdy1 = ShortlistPhotos.WetBdy(ThisLoop);
     WetBdy2 = ShortlistPhotos.WetBdy(ThisLoop);
     
@@ -155,6 +154,7 @@ while ii <= NoToProcess
                                            Config.SeedPixel1, ...
                                            Twist1, WetBdy1);
     
+    Twist2 = [Twist1(:,1),-Twist1(:,2),-Twist1(:,3)];
     fprintf('Camera2: ')
     [ ~    , WetBdy2] = LagoonEdgePosition(Photo2FileName, ...
                                            WL, Config.Cam2, ...
