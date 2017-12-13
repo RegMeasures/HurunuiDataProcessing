@@ -1,3 +1,6 @@
 [submodule "functions/externals/export_fig"]
 	path = functions/externals/export_fig
 	url = https://github.com/altmany/export_fig.git
+[submodule "functions/externals/GSW-Matlab"]
+	path = functions/externals/GSW-Matlab
+	url = https://github.com/TEOS-10/GSW-Matlab.git

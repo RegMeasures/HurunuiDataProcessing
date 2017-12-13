@@ -119,6 +119,29 @@ WaveTS2.Date = datetime(WaveTS2.Date,'format','dd/MM/yyyy HH:mm:ss');
 WaveTS = [WaveTS, WaveTS2(:,2:end)]; % if this line doesn't work check tideda exports for same time period and synchronised to 30min intervals
 clear WaveTS2
 
+% Read salinity logger data
+SalinityFiles = rdir(fullfile(Config.DataFolder,'TimeseriesData\SalinityTS\*.csv'), '', true);
+SalinityTS.DateTime = NaT(0,0);
+SalinityTS.Temp = nan(0,0);
+SalinityTS.Cond = nan(0,0);
+for FileNo = 1:size(SalinityFiles,1)
+    LoggerData = readtable(fullfile(SalinityFiles(FileNo).folder,SalinityFiles(FileNo).name), ...
+                           'HeaderLines', 15, ...
+                           'Delimiter', ',', ...
+                           'ReadVariableNames', true);
+    LoggerData.DateTime = datetime(strcat(LoggerData.Date,LoggerData.Time), ...
+                                   'InputFormat', 'yyyy/MM/ddHH:mm:ss');
+    SalinityTS.DateTime = [SalinityTS.DateTime; ...
+                           LoggerData.DateTime(1) - seconds(1); ...
+                           LoggerData.DateTime; ...
+                           LoggerData.DateTime(end) + seconds(1)];
+    SalinityTS.Temp = [SalinityTS.Temp; nan; LoggerData.TEMPERATURE; nan];
+    SalinityTS.Cond = [SalinityTS.Cond; nan; LoggerData.CONDUCTIVITY; nan];
+end
+SalinityTS = struct2table(SalinityTS);
+SalinityTS = sortrows(SalinityTS,1);
+SalinityTS.SP = gsw_SP_from_C(SalinityTS.Cond,SalinityTS.Temp,0);
+clear LoggerData LoggerInterval
 %% Data QA
 
 % Water Level Timeseries
@@ -309,6 +332,9 @@ LagoonTS.Runup1 = interp1(WaveTS.Date,...
 LagoonTS.Runup2 = interp1(WaveTS.Date,...
                           WaveTS.Runup2,...
                           LagoonTS.DateTime);
+LagoonTS.SP = interp1(SalinityTS.DateTime,...
+                      SalinityTS.SP,...
+                      LagoonTS.DateTime);
 
 figure
 plot(LagoonTS.DateTime, LagoonTS{:,{'WL','SeaLevel'}});
