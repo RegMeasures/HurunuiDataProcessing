@@ -31,6 +31,9 @@ Config.HurunuiBaroFile = '\TimeseriesData\CheviotPressureCliFlow.txt';
 Config.WaveCSV1 = '\TimeseriesData\WaveData1.csv';
 Config.WaveCSV2 = '\TimeseriesData\WaveData2.csv';
 
+% Salinity data folder
+Config.SalinityFolder = 'TimeseriesData\SalinityTS';
+
 % Photo directory containing all images
 Config.PhotoFolder = '\PhotoRecord\ImageStore';
 
