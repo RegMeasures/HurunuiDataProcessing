@@ -23,7 +23,7 @@ ax(1)=gca;
 set(ax(1),'Xtick',[],'Ytick',[],'ylim',[-10*nAxes 0]);
 box on;
 for i=1:nAxes
-    if mod(i,2)==1
+    if mod(i,2)==0
         ax(i+1)=axes('YAxisLocation', 'Left');
     else
         ax(i+1)=axes('YAxisLocation', 'Right');
