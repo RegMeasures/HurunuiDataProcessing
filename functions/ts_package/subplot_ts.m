@@ -238,17 +238,18 @@ set(gca,'ytick',ytix.*flipscale-10*idx-mdp+5+offset,'yticklabels',ytix);
 dir=get(gca,'xdir');
 xmax=max(get(gca,'xlim'));
 xmin=min(get(gca,'xlim'));
+labelSpace = 1.04; %1.075 originally
 if mod(idx,2)==0
     if strcmp(dir,'reverse')
-        xpt=1.075*(xmax-xmin)+xmin;
+        xpt=labelSpace*(xmax-xmin)+xmin;
     else
-        xpt=xmax-1.075*(xmax-xmin);
+        xpt=xmax-labelSpace*(xmax-xmin);
     end
 else
     if strcmp(dir,'reverse')
-        xpt=xmax-1.075*(xmax-xmin);
+        xpt=xmax-labelSpace*(xmax-xmin);
     else
-        xpt=1.075*(xmax-xmin)+xmin;
+        xpt=labelSpace*(xmax-xmin)+xmin;
     end
 end
 ypt=-10*idx+5+offset;
