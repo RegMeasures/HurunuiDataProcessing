@@ -109,6 +109,7 @@ clear TimeNoToProcess Cam1Image Cam2Image WL Twist LinePxX LinePxY ...
 % upstream and downstream position
 ChannelPos.UsPos = nan(size(ChannelPos,1),2,3);
 ChannelPos.DsPos = nan(size(ChannelPos,1),2,3);
+% note: dim1 = time, dim2 = outlet no (up to 3), dim3 = [X, Y]
 EdgeTol = 50;
 for TimeNo = 1:size(ChannelPos,1);
     % find start and end
