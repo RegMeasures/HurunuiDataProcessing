@@ -7,3 +7,5 @@
 # Ignore mat files in outputs
 outputs/*.mat
 *.pdf
+/outputs/*.png
+/outputs/*.eps

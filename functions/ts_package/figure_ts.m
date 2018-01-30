@@ -1,17 +1,18 @@
 function ax = figure_ts(nAxes,xlims,isRev,lbl)
-
-%% Stacked time series figure
-%% SUMMARY creates figure and returns axis handles for stacked time
-%%          series plots with shared xaxis, default: box on and caslon axis
-%%          fonts
-%%For use with stacked time series plotting package.
-
+%Stacked time series figure
+%SUMMARY creates figure and returns axis handles for stacked time
+%        series plots with shared xaxis, default: box on and Arial axis
+%        fonts
+%
+%For use with stacked time series plotting package.
+%
 %INPUT:
 %   nAxes: number of vertically stacked axes
 %	xlims: limits on xaxis range (cannot be empty)
 %	isRev: 1 if xaxis reversed, 0 if not
 %   lbl: string for x axis label
-
+%   isTopAx: 1 if top x axis labels as well as bottom, 0 = bottom only.
+%
 %OUTPUT:
 %   ax: axes array used for other nice_ts function calls
 
@@ -20,7 +21,7 @@ set(0, 'DefaultAxesFontName', 'Arial')
 set(0,'DefaultTextInterpreter','Tex')
 figure
 ax(1)=gca;
-set(ax(1),'Xtick',[],'Ytick',[],'ylim',[-10*nAxes 0]);
+set(ax(1),'Xtick',[],'Ytick',[],'ylim',[-10*nAxes 0],'color', 'none');
 box on;
 for i=1:nAxes
     if mod(i,2)==0
@@ -35,14 +36,14 @@ for i=1:nAxes
     end
 end
 
-%%handle reversed xaxis
+%% handle reversed xaxis
 if isRev==1
     set(ax(:),'xlim',xlims,'xdir','reverse');
 else
     set(ax(:),'xlim',xlims);
 end
 
-%%xlabel
+%% xlabel
 axes(ax(2));
 xlabel(lbl);
 linkaxes(ax(:));

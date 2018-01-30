@@ -1,4 +1,4 @@
-function [H] = subplot_ts(ax,idx,ytix,lbl,Yscale,offset,varargin)
+function [H, DataScale, DataOffset] = subplot_ts(ax,idx,ytix,lbl,Yscale,offset,varargin)
 %SUBPLOT_TS Stacked Time Series Subplotter
 %   Plots up to 4 series on one y-axis. Designed to accomodate infinite 
 %   axes stacked atop one another with appropriate amount of white
@@ -255,9 +255,8 @@ end
 ypt=-10*idx+5+offset;
 ylabel(lbl,'position',[xpt ypt]);
 
+%% Additional ouputs
+DataScale = flipscale;
+DataOffset = -10*idx-mdp+5+offset;
 
 end
-
-
-
-
