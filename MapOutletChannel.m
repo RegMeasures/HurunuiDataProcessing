@@ -115,10 +115,10 @@ for TimeNo = 1:size(ChannelPos,1);
     % find start and end
     [StartCoords,EndCoords] = polylineEnds(ChannelPos.LineXY{TimeNo});
     % remove any start/ends which are in the blind spot
-    StartCoords(ChannelPos.LineXY{TimeNo}(StartCoords,1) > Config.Cam2.Resolution(1) - EdgeTol & ...
-                ChannelPos.LineXY{TimeNo}(StartCoords,1) < Config.Cam2.Resolution(1) + EdgeTol) = false;
-    EndCoords(ChannelPos.LineXY{TimeNo}(EndCoords,1) > Config.Cam2.Resolution(1) - EdgeTol & ...
-              ChannelPos.LineXY{TimeNo}(EndCoords,1) < Config.Cam2.Resolution(1) + EdgeTol) = false;
+    StartCoords(ChannelPos.LinePx{TimeNo}(:,1) > Config.Cam2.Resolution(1) - EdgeTol & ...
+                ChannelPos.LinePx{TimeNo}(:,1) < Config.Cam2.Resolution(1) + EdgeTol) = false;
+    EndCoords(ChannelPos.LinePx{TimeNo}(:,1) > Config.Cam2.Resolution(1) - EdgeTol & ...
+              ChannelPos.LinePx{TimeNo}(:,1) < Config.Cam2.Resolution(1) + EdgeTol) = false;
 
     % restrict to 3 points (for now)
     StartCoords = find(StartCoords,3);
