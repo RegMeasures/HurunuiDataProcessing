@@ -29,22 +29,22 @@ These scripts rely on functions and static data/inputs contained with the [funct
 
 ## External code
 ### export-fig
-HurunuiDataProcessing uses [export_fig](https://github.com/altmany/export_fig) for exporting publication quality figures. Export_fig is included as a submodule: [functions/externals/export_fig](functions/externals/export_fig). To export PDF format figures export_fig requires Ghostscript be installed, a free download available from http://www.ghostscript.com/. To export EPS format figures export_fig requires pdftops.exe, part of the Xpdf tools available freely from http://www.xpdfreader.com.
+HurunuiDataProcessing uses [export_fig](https://github.com/altmany/export_fig) for exporting publication quality figures. Export_fig is included as a submodule in the HurunuiDataAnalysis respoitory (in [functions/externals](functions/externals)). To export PDF format figures export_fig requires Ghostscript be installed, a free download available from http://www.ghostscript.com/. To export EPS format figures export_fig requires pdftops.exe, part of the Xpdf tools available freely from http://www.xpdfreader.com.
 
 ### Gibbs SeaWater (GSW) Oceanographic Toolbox of TEOS-10
-To convert from conductivity to salinity HurunuiDataProcessing uses the [Gibbs SeaWater (GSW) Oceanographic Toolbox of TEOS-10](http://www.teos-10.org/software.htm). The matlab toolbox of these functions, GSW-Matlab, is avalable on GitHub ([https://github.com/TEOS-10/GSW-Matlab](https://github.com/TEOS-10/GSW-Matlab)) and is included as a submodel: [functions/externals/GSW-Matlab](functions/externals/GSW-Matlab).
+To convert from conductivity to salinity HurunuiDataProcessing uses the [Gibbs SeaWater (GSW) Oceanographic Toolbox of TEOS-10](http://www.teos-10.org/software.htm). The matlab toolbox of these functions, GSW-Matlab, is avalable on GitHub ([https://github.com/TEOS-10/GSW-Matlab](https://github.com/TEOS-10/GSW-Matlab)) and is included as a submodule in the HurunuiDataAnalysis respoitory (in [functions/externals](functions/externals)).
 
 ### t-tide
-t-tide (Pawlowicz et al. 2002) is used for tidal analysis. This is a free set of tools available for download ([https://www.eoas.ubc.ca/~rich/#T_Tide](https://www.eoas.ubc.ca/~rich/#T_Tide)) and a copy is included in the HururnuiDataAnalysis repository ([functions\t_tide_v1.3beta\](functions\t_tide_v1.3beta\))
+t-tide (Pawlowicz et al. 2002) is used for tidal analysis. This is a free set of tools available for download ([https://www.eoas.ubc.ca/~rich/#T_Tide](https://www.eoas.ubc.ca/~rich/#T_Tide)) and a copy is included in the HururnuiDataAnalysis repository ([functions/t_tide_v1.3beta](functions/t_tide_v1.3beta))
 
 ### OpenEarthTools
-OpenEarthTools contains many useful matlab functions. The small sub-set of these functions which have been used in HurunuiDataAnalysis have been copied into the repository at [functions\OpenEarthTools\](functions\OpenEarthTools\).
+OpenEarthTools contains many useful matlab functions. More information about the OpenEarth initiative is available at [https://publicwiki.deltares.nl/display/OET](https://publicwiki.deltares.nl/display/OET). Only a small sub-set of the many available matlab functions have been used in HurunuiDataAnalysis. These have been copied into the repository at [functions/OpenEarthTools](functions/OpenEarthTools).
 
 ### ts_package
-The ts_package functions for producing stacked timeseries plots are available on Matlab File Exchange: [https://mathworks.com/matlabcentral/fileexchange/60990-stacked-time-series-plots](https://mathworks.com/matlabcentral/fileexchange/60990-stacked-time-series-plots). These functions have been copied into the HurunuiDataAnalaysis repository ([functions\ts_package\](functions\ts_package\)) and have been modified to allow customisation to plot formats.
+The ts_package functions for producing stacked timeseries plots are available on Matlab File Exchange: [https://mathworks.com/matlabcentral/fileexchange/60990-stacked-time-series-plots](https://mathworks.com/matlabcentral/fileexchange/60990-stacked-time-series-plots). These functions have been copied into the HurunuiDataAnalaysis repository ([functions/ts_package](functions/ts_package)) and have been modified to allow customisation to plot formats.
 
 ### wind_rose
-The wind_rose function for producing wind rose plots is available on Matlab File Exchange: [http://au.mathworks.com/matlabcentral/fileexchange/17748-wind-rose](http://mathworks.com/matlabcentral/fileexchange/17748-wind-rose). The function has been copied into the HurunuiDataAnalysis repository ([functions\wind_rose\](functions\wind_rose\)) and slightly modified.
+The wind_rose function for producing wind rose plots is available on Matlab File Exchange: [http://au.mathworks.com/matlabcentral/fileexchange/17748-wind-rose](http://mathworks.com/matlabcentral/fileexchange/17748-wind-rose). The function has been copied into the HurunuiDataAnalysis repository ([functions/wind_rose](functions/wind_rose)) and slightly modified.
 
 ## Acknowledgements
 [NIWA](https://www.niwa.co.nz) has funded this research through the [Sustainable water Allocation Programme](https://www.niwa.co.nz/freshwater-and-estuaries/programme-overview/sustainable-water-allocation).
