@@ -16,7 +16,7 @@ function ax = figure_ts(nAxes,xlims,isRev,lbl)
 %   ax: axes array used for other nice_ts function calls
 
 
-set(0, 'DefaultAxesFontName', 'Caslon')
+set(0, 'DefaultAxesFontName', 'Arial')
 set(0,'DefaultTextInterpreter','Tex')
 figure
 ax(1)=gca;

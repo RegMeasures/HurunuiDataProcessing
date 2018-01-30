@@ -32,62 +32,6 @@ load('outputs\ShortlistPhotos.mat');
 % Load channel position TS
 load('outputs\ChannelPos.mat')
 
-%% Longterm multi panel timeseries plot
-
-FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 800]);
-
-% Top panel - flow
-% timeseries
-AxH{1} = subplot(3,2,1);
-plot(AxH{1},LagoonTS.DateTime,LagoonTS.Qin)
-xlim(AxH{1},XRange)
-ylim(AxH{1},[0,400])
-ylabel(AxH{1},'Hapua inflow (m^3/s)')
-% cumulative frequency
-AxH{2} = subplot(3,2,2);
-[f,x] = ecdf(LagoonTS.Qin);
-plot((1-f)*100,x)
-ylim(AxH{2},[0,400])
-xlabel(AxH{2},'% of time exceeded')
-xticks(AxH{2},0:25:100)
-
-% Second panel - waves
-AxH{3} = subplot(3,2,3);
-plot(AxH{3},LagoonTS.DateTime,LagoonTS.WaveHs)
-xlim(AxH{3},XRange)
-ylim(AxH{3},[0,8])
-ylabel(AxH{3},'Offshore Sig. wave height, H_s (m)')
-% cumulative frequency
-AxH{4} = subplot(3,2,4);
-[f,x] = ecdf(LagoonTS.WaveHs);
-plot((1-f)*100,x)
-ylim(AxH{4},[0,8])
-xlabel(AxH{4},'% of time exceeded')
-xticks(AxH{4},0:25:100)
-
-% Third panel - lagoon and tide level
-AxH{5} = subplot(3,2,5);
-plot(AxH{5},LagoonTS.DateTime,[LagoonTS.WL,LagoonTS.SeaLevel])
-xlim(AxH{5},XRange)
-ylim(AxH{5},[-1,4])
-ylabel(AxH{5},'Water level (mLVD)')
-legend(AxH{5},{'Lagoon level','Sea level'})
-% cumulative frequency
-AxH{6} = subplot(3,2,6);
-[f,x] = ecdf(LagoonTS.WL);
-plot((1-f)*100,x)
-ylim(AxH{6},[-1,4])
-xlabel(AxH{6},'% of time exceeded')
-xticks(AxH{6},0:25:100)
-
-% Adjust plot positions and margins
-set(AxH{1}, 'Position', [0.05, 2/3+0.055, 0.71, 1/3-0.06])
-set(AxH{2}, 'Position', [0.8,  2/3+0.055, 0.18, 1/3-0.06])
-set(AxH{3}, 'Position', [0.05, 1/3+0.055, 0.71, 1/3-0.06])
-set(AxH{4}, 'Position', [0.8,  1/3+0.055, 0.18, 1/3-0.06])
-set(AxH{5}, 'Position', [0.05, 0/3+0.055, 0.71, 1/3-0.06])
-set(AxH{6}, 'Position', [0.8,  0/3+0.055, 0.18, 1/3-0.06])
-
 %% TS plot of daily WL analysis
 
 % overview TS
@@ -143,10 +87,9 @@ plot(LagoonTS.DateTime,LagoonTS.WaveHs)
 xlim(XRange)
 ylabel('Offshore Sig. wave height, H_s (m)')
 
-
 %% Longterm multi panel timeseries plot
 
-% set up figure
+% set up figure size and margins
 ax = figure_ts(6,datenum(XRange),0,'');
 FigPos = get(gcf,'pos');
 % Portrait
@@ -155,8 +98,6 @@ FigPos = get(gcf,'pos');
 % Landscape
 set(gcf,'pos',[FigPos(1)-400,FigPos(2)-(900-FigPos(4)),1400,900], ...
     'Color',[1,1,1])
-datetick('x','mmmyy','keeplimits')
-ax(2).XGrid = 'on';
 for ii=1:size(ax,2)
     AxPos = get(ax(ii),'Position');
     % Portrait
@@ -169,6 +110,16 @@ for ii=1:size(ax,2)
                'TickLength', [0.005,0.005])
 end
 
+% Add vertical gridlines (XGrid)
+datetick('x','mmmyy','keeplimits')
+ax(2).XGrid = 'on';
+ax(2).XAxis.MinorTickValuesMode = 'manual';
+ax(2).XAxis.MinorTickValues = ...
+    datenum(dateshift(XRange(1), 'start', 'month', ...
+                      0:calmonths(between(XRange(1),XRange(2)))));
+ax(2).XAxis.MinorTick = 'on';
+ax(2).XMinorGrid = 'on';
+
 % ticks and ylabels for each axis
 YTicsChan = 0:400:1600; YLblChan  = {'Position of outlet channel'; ...
                                      '(m North of river centerline)'};
@@ -178,7 +129,8 @@ YTicsLst   = -10:10:30; YLblLst   = {'Longshore transport potential'; ...
                                      '(positive northwards)'};
 YTicsRunup = 0:1:3; YLblRunup = {'Overwash potential'; ...
                                  '(daily maxima, m)'};
-YTicsLevel = 0:0.5:3; YLblLevel = {'Lagoon water level (m)'};
+YTicsLevel = 0:0.5:3; YLblLevel = {'Lagoon water level'; ...
+                                   '(daily range, m)'};
 
 % plot outlet channel position including blindspot
 ChanScale = 1.1;
@@ -253,8 +205,9 @@ SmoothedLstPotNeg = SmoothedLstPot;
 SmoothedLstPotPos(SmoothedLstPotPos<0) = nan;
 SmoothedLstPotNeg(SmoothedLstPotNeg>0) = nan;
 subplot_ts(ax, 4, YTicsLst ,YLblLst, 1.1, -3.5,...
-           's1', datenum(LagoonTS.DateTime), SmoothedLstPotPos, '-b', ...
-           's2', datenum(LagoonTS.DateTime), SmoothedLstPotNeg, '-r');
+           's1', datenum(LagoonTS.DateTime), SmoothedLstPot, '-k', ...
+           's2', datenum(LagoonTS.DateTime), SmoothedLstPotPos, '-b', ...
+           's3', datenum(LagoonTS.DateTime), SmoothedLstPotNeg, '-r');
 
 % overwash potential plot
 subplot_ts(ax, 5, YTicsRunup ,YLblRunup, 0.9, -2,...
@@ -305,10 +258,11 @@ title(LegWidth, 'Width at:', 'FontWeight', 'Normal')
 
 % Save figure
 export_fig('outputs\ConcurrentTimeseries', '-png', '-r450')
+export_fig('outputs\ConcurrentTimeseries', '-eps')
 
 % Tidy up
 clear YTicsChan YTicsWidth YTicsFlow YTicsLst PlotDates T5 T6 T7 T8 ...
     FigPos ChanSpacing ChanOffset range rangeFill scale LegChan ...
     LegWidth WidthH ChanH YLblChan YLblWidth YLblFlow YLblLst ...
-    TPlotDates mdp ax LightBlue LevelH YTicsLevel YLblLevel LevelScale ...
+    TPlotDates mdp LightBlue LevelH YTicsLevel YLblLevel LevelScale ...
     LevelOffset AxPos
