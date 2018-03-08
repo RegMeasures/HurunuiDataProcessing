@@ -329,7 +329,7 @@ WaveModTS.Runup1 = 1.1 * (0.35 * Config.Beachslope * (WaveModTS.Hsig .* WaveModT
                   
 % Runup (Poate et al 2016 eq11)
 BuoyTS.Runup2 = 0.49 * Config.Beachslope^0.5 * BuoyTS.TzSec .* BuoyTS.HsM;
-WaveModTS.Runup2 = 0.49 * Config.Beachslope^0.5 * WaveModTS.Tm02 .* WaveModTS.Hsig;
+WaveModTS.Runup2 = 0.49 * Config.Beachslope^0.5 * WaveModTS.Tm01 .* WaveModTS.Hsig;
 
 figure
 histogram(WaveModTS.Dir, 'BinEdges', 0:5:360)
@@ -416,12 +416,16 @@ legend('Inflow','Outflow')
 %% Calculate Overwash Potential (Matias et al 2012)
 LagoonTS.OP1 = max(LagoonTS.SeaLevel + LagoonTS.Runup1 - Config.CrestHeight, 0);
 LagoonTS.OP2 = max(LagoonTS.SeaLevel + LagoonTS.Runup2 - Config.CrestHeight, 0);
+% LagoonTS.OP1 = LagoonTS.SeaLevel + LagoonTS.Runup1;
+% LagoonTS.OP2 = LagoonTS.SeaLevel + LagoonTS.Runup2;
 
 figure
-plot(LagoonTS.DateTime,LagoonTS{:,{'OP1','OP2'}});
+% plotyy(LagoonTS.DateTime,LagoonTS{:,{'WL','SeaLevel','OP1','OP2'}}, ...
+%        LagoonTS.DateTime, LagoonTS.SP);
+plot(LagoonTS.DateTime,LagoonTS{:,{'WL','SeaLevel','OP1','OP2'}});
 datetickzoom('x')
 ylabel('Overtopping potential (m)')
-legend('Stockdon et al 2006','Poate et al 2016')
+legend('Lagoon level','Sea level','Stockdon et al 2006','Poate et al 2016')
 
 %% Save lagoon TS
 writetable(LagoonTS,'outputs\LagoonTS.csv')

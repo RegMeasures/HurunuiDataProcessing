@@ -114,4 +114,4 @@ clear ShorelineShp Shoreline
 Config.Beachslope = 0.13;
 
 % Barrier crest height
-Config.CrestHeight = 3.9;
+Config.CrestHeight = 3.0; % In reality heights are generally higher - up to approximately 4m, but this depends on barrier conditoion. 3m is min height?
