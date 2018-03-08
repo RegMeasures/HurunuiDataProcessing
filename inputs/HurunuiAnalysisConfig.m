@@ -27,9 +27,12 @@ Config.SumnerBaroFile = '\TimeseriesData\SumnerBaro.csv';
 Config.HurunuiTidalConstFile = '\TimeseriesData\Hurunui.cns';
 Config.HurunuiBaroFile = '\TimeseriesData\CheviotPressureCliFlow.txt';
 
-% Wave data exported from Tideda
+% Wave buoy data exported from Tideda
 Config.WaveCSV1 = '\TimeseriesData\WaveData1.csv';
 Config.WaveCSV2 = '\TimeseriesData\WaveData2.csv';
+
+% Wave data from SWAN modelling
+Config.WaveModelOutput = '\SWAN\output\TS_hurunui.txt';
 
 % Salinity data folder
 Config.SalinityFolder = 'TimeseriesData\SalinityTS';

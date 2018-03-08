@@ -14,19 +14,20 @@ function varargout = wind_rose(D,F,varargin)
 %            if not meteo, standard is used (default)
 %       -n, number of D subdivisons
 %       -di, intensities subdivisons, default is automatic
-%       -ci, percentage circles to draw, default is automatic
+%       -ci, percentage circles to draw (0 = don't draw any), 
+%            default is automatic
 %       -labtitle, main title
 %       -lablegend, legend title
 %       -cmap, colormap [jet]
 %       -colors, to use instead of colormap, for each di
-%       -quad, Quadrant to show percentages [1]
+%       -quad, Quadrant to show percentages (0 = do not show) [1]
 %       -ri, empty internal radius, relative to size of higher
 %            percentage [1/30]
 %       -legtype, legend type: 1, continuous, 2, separated boxes [2]
 %       -bcolor, full rectangle border color ['none']
 %       -lcolor, line colors for axes and circles ['k']
 %       -lwidth, line width for axes and circles [1]
-%       -lstyle, line style for axes and circles [:]
+%       -lstyle, line style for axes and circles (use 'none' to omit axes lines) [:]
 %       -bgcolor, background color for plot ['w']
 %       -percbg, percentage labels bg ['w']
 %       -ax, to place wind rose on pervious axes, the input for ax
@@ -261,9 +262,14 @@ if isempty(ci)
     g=ncircles*d;
   end
 else
-  ncircles=length(ci);
+  if ci==0
+    ncircles=0;
+  else
+    ncircles=length(ci);
+  end
   g=max(max(ci),max(b));
 end
+
 
 % plot axes, percentage circles and percent. data:
 if parent
@@ -281,26 +287,29 @@ if onAxes
   set(handles(end),'facecolor','none')
 end
 hold on
-handles(end+1)=plot([-g-ri -ri nan ri g+ri nan 0 0 nan 0 0],...
-                    [0 0 nan 0 0 nan -g-ri -ri nan ri g+ri],lineStyle,...
-                    'color',lineColors,'LineWidth',lineWidth);
-t0=[0:360]*pi/180;
 labs=[];
-Ang=[1/4 3/4 5/4 7/4]*pi;
-Valign={'top' 'top' 'bottom' 'bottom'};
-Halign={'right' 'left' 'left' 'right'};
-for i=1:ncircles
-  x=(ci(i)+ri)*cos(t0);
-  y=(ci(i)+ri)*sin(t0);
+if ~strcmp(lineStyle,'none')
+  handles(end+1)=plot([-g-ri -ri nan ri g+ri nan 0 0 nan 0 0],...
+                      [0 0 nan 0 0 nan -g-ri -ri nan ri g+ri],lineStyle,...
+                      'color',lineColors,'LineWidth',lineWidth);
+  t0=[0:360]*pi/180;
+  Ang=[1/4 3/4 5/4 7/4]*pi;
+  Valign={'top' 'top' 'bottom' 'bottom'};
+  Halign={'right' 'left' 'left' 'right'};
+  for i=1:ncircles
+    x=(ci(i)+ri)*cos(t0);
+    y=(ci(i)+ri)*sin(t0);
 
-  circles(i)=plot(x,y,lineStyle,'color',lineColors,'LineWidth',lineWidth);
-  handles(end+1)=circles(i);
-
-  labs(i)=text((ci(i)+ri)*cos(Ang(quad)),(ci(i)+ri)*sin(Ang(quad)),[num2str(ci(i)),'%'],...
-      'VerticalAlignment',Valign{quad},'HorizontalAlignment',Halign{quad},...
-      'BackgroundColor',percBg,'FontSize',8);
+    circles(i)=plot(x,y,lineStyle,'color',lineColors,'LineWidth',lineWidth);
+    handles(end+1)=circles(i);
+    if quad>0
+      labs(i)=text((ci(i)+ri)*cos(Ang(quad)),(ci(i)+ri)*sin(Ang(quad)),[num2str(ci(i)),'%'],...
+          'VerticalAlignment',Valign{quad},'HorizontalAlignment',Halign{quad},...
+          'BackgroundColor',percBg,'FontSize',8);
+    end
+  end
+  handles=[handles labs];
 end
-handles=[handles labs];
 
 % calc colors:
 if isempty(colors)
