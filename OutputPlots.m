@@ -139,11 +139,10 @@ ax(2).GridLineStyle = '--';
 YTicsChan = 0:400:1600; YLblChan  = {'Position of outlet channel'; ...
                                      '(m North of river centerline)'};
 YTicsWidth = 30:30:150; YLblWidth = 'Lagoon width (m)';
-YTicsFlow  = 0:200:600; YLblFlow  = 'River flow (m^3/s)';
+YTicsFlow  = 0:200:600; YLblFlow  = 'River flow (m^3\cdots^{-1})';
 YTicsLst   = -4:2:6; YLblLst   = {'Longshore transport potential'; ...
                                      '(positive northwards)'};
-YTicsRunup = 0:0.5:2; YLblRunup = {'Overwash potential'; ...
-                                 '(daily maxima, m)'};
+YTicsRunup = 0:0.5:2; YLblRunup = {'Overwash potential (m)'};
 YTicsLevel = -1:1:3; YLblLevel = {'Water level (daily range, m)'; ...
                                    'sea = green, lagoon = blue'};
 

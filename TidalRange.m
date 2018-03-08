@@ -24,6 +24,7 @@ clear MinLength
 TideRange = HWLevels-LWLevels;
 
 % Check
+figure
 plot(HWTimes,HWLevels)
 hold on
 plot(LWTimes,LWLevels)
@@ -35,4 +36,5 @@ MeanRange = MHW - MLW
 MeanRange2 = mean(TideRange)
 
 % Plot range distribution
+figure
 histogram(TideRange)
