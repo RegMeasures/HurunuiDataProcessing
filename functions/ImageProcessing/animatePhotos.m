@@ -169,7 +169,7 @@ if PlotWave
     WaveFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[0,6],'k-');
     hold off
     ylabel('Sig. wave height [m]')
-    ylim([0,6])
+    ylim([0,4])
     Pos = get(WaveFig.AxesH, 'Position');
     set(WaveFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
 else
