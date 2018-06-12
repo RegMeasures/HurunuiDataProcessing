@@ -7,14 +7,16 @@ To do:
       included in WetDry2 as well. ImageAnalysis and TestProjectToMap will need 
       updating.
 - [x] make some WetBdy QA and discard the crap!
-- [ ] update Sumner sea level (and baro) timeseries
-- [ ] update Hurunui baro timeseries
+- [x] update Sumner sea level (and baro) timeseries
+- [x] update Hurunui baro timeseries
 - [ ] QA plot to check for gaps in photo record
 - [x] Wave data QA plot in TimeseiesAnalysis
 - [x] fix measureTwist for Feb-March 2017 where X twist goes out of range
 - [x] handle multiple returns when looking for offsets
 - [x] measure mouth position alongshore
-- [ ] output plots to pdf
+- [x] output plots to pdf
 - [x] improve cleanWetBdy so it removes the artificial edges at the edge of the 
       frame near the camera
 - [x] check order of twist measurement, distortion correction, etc
+- [ ] move image animation into seperate script
+- [ ] investigate options for online (open?) storage of image data...
