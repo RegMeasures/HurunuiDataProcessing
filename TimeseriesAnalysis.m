@@ -198,6 +198,9 @@ DataOk(SumnerTS.WL < -3) = false;
 WLchange = [0;(SumnerTS.WL(2:end)-SumnerTS.WL(1:end-1));0];
 DataOk(WLchange(1:end-1) > 0.5 & WLchange(2:end) < -0.5|...
       WLchange(1:end-1) < -0.5 & WLchange(2:end) > 0.5) = false;
+% check range to identify gaps with ~constant values
+DataOk(movmax(SumnerTS.WL,[48,0])-movmin(SumnerTS.WL,[48,0]) < 0.3) = false; 
+DataOk(movmax(SumnerTS.WL,[0,48])-movmin(SumnerTS.WL,[0,48]) < 0.3) = false;
 SumnerTS = SumnerTS(DataOk,:);
 % Plot
 figure
@@ -285,6 +288,9 @@ clear DataOk WLchange
 [HurunuiTide.DateTime, HurunuiTide.Anomaly] = ...
     CalcTidalAnomaly(SumnerTS, SumnerBaroTS);
 HurunuiTide = struct2table(HurunuiTide);
+
+% Interpolate anomaly for periods of missing sumner data (e.g. 14/8/2017 - 9/9/2017)
+HurunuiTide.Anomaly = fillmissing(HurunuiTide.Anomaly, 'linear');
 
 % Calculate astronomic tide at Hurunui
 [HurunuiTide.Astronomic] = ...
@@ -460,7 +466,7 @@ meanT = nan(size(TestTimeSteps,2),1);
 RMSE = nan(size(TestTimeSteps,2),1);
 ExitFlag = nan(size(TestTimeSteps,2),1);
 
-parfor i = TestTimeSteps;
+parfor i = TestTimeSteps
 %for i=100:1000:5100;
     
     % Set up the optimisation inputs
