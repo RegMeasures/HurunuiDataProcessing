@@ -113,8 +113,8 @@ parent=0;
 IncHiLow=1; % include values higher and lower that the limits of Ag.
 compass=true;
 bgcolor='w';
-lwidth=1;
-lstyle=':';
+lineWidth=1;
+lineStyle=':';
 
 vin=varargin;
 for i=1:length(vin)
