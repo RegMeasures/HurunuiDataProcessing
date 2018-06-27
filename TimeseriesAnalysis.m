@@ -198,6 +198,9 @@ DataOk(SumnerTS.WL < -3) = false;
 WLchange = [0;(SumnerTS.WL(2:end)-SumnerTS.WL(1:end-1));0];
 DataOk(WLchange(1:end-1) > 0.5 & WLchange(2:end) < -0.5|...
       WLchange(1:end-1) < -0.5 & WLchange(2:end) > 0.5) = false;
+% check range to identify gaps with ~constant values
+DataOk(movmax(SumnerTS.WL,[48,0])-movmin(SumnerTS.WL,[48,0]) < 0.3) = false; 
+DataOk(movmax(SumnerTS.WL,[0,48])-movmin(SumnerTS.WL,[0,48]) < 0.3) = false;
 SumnerTS = SumnerTS(DataOk,:);
 % Plot
 figure
@@ -285,6 +288,9 @@ clear DataOk WLchange
 [HurunuiTide.DateTime, HurunuiTide.Anomaly] = ...
     CalcTidalAnomaly(SumnerTS, SumnerBaroTS);
 HurunuiTide = struct2table(HurunuiTide);
+
+% Interpolate anomaly for periods of missing sumner data (e.g. 14/8/2017 - 9/9/2017)
+HurunuiTide.Anomaly = fillmissing(HurunuiTide.Anomaly, 'linear');
 
 % Calculate astronomic tide at Hurunui
 [HurunuiTide.Astronomic] = ...
@@ -444,76 +450,3 @@ writetable(LagoonTS,'outputs\LagoonTS.csv')
 
 DailyLagoonTS = dailyStats(LagoonTS);
 writetable(DailyLagoonTS,'outputs\DailyLagoonTS.csv')
-
-%% Estimate Channel Dimensions
-
-% Cut down TS
-AllData = ~isnan(LagoonTS.WL) & ~isnan(LagoonTS.Qin) & ~isnan(LagoonTS.SeaLevel);
-CropTS = LagoonTS(AllData,:);
-
-% Cut down further for testing
-CropTS = CropTS(CropTS.DateTime>=datenum('1-May-2016')&CropTS.DateTime<datenum('1-Jun-2016'),:);
-
-TestTimeSteps = 1:size(CropTS,1)/48;
-Channel = cell(size(TestTimeSteps,2),1);
-meanT = nan(size(TestTimeSteps,2),1);
-RMSE = nan(size(TestTimeSteps,2),1);
-ExitFlag = nan(size(TestTimeSteps,2),1);
-
-parfor i = TestTimeSteps;
-%for i=100:1000:5100;
-    
-    % Set up the optimisation inputs
-    meanT(i,1) = mean(CropTS.DateTime(i*48-47:i*48));
-    Q = CropTS.Qout(i*48-47:i*48);
-    E_us = CropTS.WL(i*48-47:i*48);
-    E_ds = CropTS.SeaLevel(i*48-47:i*48);
-    Manning = 0.04;
-%     
-%     figure
-%     plot(Q)
-%     figure
-%     plot(E_us,'-r')
-%     hold on
-%     plot(E_ds,'-b')
-    
-    % Do the optimisation
-    %[Channel{i,1},RMSE(i,1),ExitFlag(i,1)] = FitChannel(Q, E_us, E_ds, Manning);
-    [Channel{i,1},RMSE(i,1),ExitFlag(i,1)] = FitChannel_4par(Q, E_us, E_ds, Manning);
-    %[Channel{i,1},RMSE(i,1),ExitFlag(i,1)] = FitChannel_3par(Q, E_us, E_ds, Manning);
-    
-end
-
-% Make a tidy output table
-ChannelTable = [table(meanT),struct2table(cell2mat(Channel)),table(RMSE)];
-writetable(ChannelTable,'ChannelTable_4pars.csv')
-save('ChannelTable_4pars','ChannelTable')
-
-
-%% Plot the results
-
-%plot(ChannelTable.meanT,ChannelTable.RMSE)
-figure
-yyplotH = plotyy(ChannelTable.meanT,ChannelTable.L,CropTS.DateTime,[CropTS.WL,CropTS.SeaLevel]);
-ylabel(yyplotH(1),'Channel Length [m]')
-ylabel(yyplotH(2),'Water Level [mLVD]')
-legend('Channel length','Lagoon level','Sea level')
-datetick(yyplotH(1),'x','keeplimits')
-set(yyplotH(2),'XTick',[])
-
-figure
-yyplotH = plotyy(ChannelTable.meanT,ChannelTable.RMSE,CropTS.DateTime,[CropTS.WL,CropTS.SeaLevel]);
-ylabel(yyplotH(1),'RMSE [m]')
-ylabel(yyplotH(2),'Water Level [mLVD]')
-legend('RMSE','Lagoon level','Sea level')
-datetick('x')
-
-figure
-yyplotH = plotyy(ChannelTable.meanT,ChannelTable.L,ChannelTable.meanT,ChannelTable.RMSE);
-ylabel(yyplotH(1),'Channel Length [m]')
-ylabel(yyplotH(2),'RMSE in us WL [m]')
-
-figure
-yyplotH = plotyy(ChannelTable.meanT,ChannelTable.B,CropTS.DateTime,CropTS.WL);
-ylabel(yyplotH(1),'Channel width [m]')
-ylabel(yyplotH(2),'RMSE in us WL [m]')

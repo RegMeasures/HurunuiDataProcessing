@@ -1,9 +1,43 @@
-% Image Pre processing for hapua fixed camera images
-% Richard Measures 2015
+%IMAGEANALYSIS   Image processing for Hurunui hapua timelapse imagery
+%   This script runs the main image processing workflow to analyse fixed
+%   camera timelapse imagery from the Hurunui Hapua. 
 %
-% Basic process:
-% - genPhotoDataTable
-% - photoQuality
+%   Key outputs from the script are:
+%      - 'outputs\PhotoDatabase.mat' a database of photos including quality
+%        metrics.
+%      - 'outputs\ShortlistPhotos.mat' a database of quality image pairs
+%        including calculated lagoon waters edge location and width at
+%        transects.
+%   
+%   The workflow involves:
+%      - Cataloging the photos (genPhotoDataTable).
+%      - Assessing photo quality to screen out low quality images 
+%        (photoQuality).
+%      - Sorting images into time-matched pairs (timeMatchPhotos).
+%      - Reading in timeseries data and assigning lagoon level to each
+%        image.
+%      - Identifying fixed objects in images to correct for camera
+%        movement, identifying waters edge, and projecting onto a flat
+%        plane at the elevation of the lagoon water surface 
+%        (lagoonEdgePosition).
+%      - Filtering to remove inconsistent waters edge or camera orientation
+%        measurements (propDistLT).
+%      - Measuring lagoon width at specific measurement transects based on 
+%        the identified waters edge location (measureLagoonWidth).
+%      
+%   Pre-requisits to run this script are:
+%      - Configuration parameters in HurunuiAnalysisConfig set up correctly
+%      - Photos labeled by capture time and saved within a single directory
+%        (sub-directories are allowed). The directory structure created by 
+%        the OrganiseImages script is ideal but other structures would also 
+%        work.
+%      - Timeseries data processed by the TimeseriesAnalysis script (the
+%        script stores output to 'outputs\LagoonTS.csv' which is then read 
+%        in by ImageAnalysis).
+%
+%   See Also: HURUNUIANALYSISCONFIG, ORGANISEIMAGES, GENPHOTODATATABLE, 
+%             PHOTOQUALITY, TIMEMATCHPHOTOS, LAGOONEDGEPOSITION,
+%             PROPDISTLT, MEASURELAGOONWIDTH
 
 %% Setup
 
@@ -53,8 +87,22 @@ clear PhotosPrevious
 save('outputs\PhotoDatabase.mat','Photos','-v7.3')
  
 % load('outputs\PhotoDatabase.mat');
+
+%% Summarise number of quality images per month as a check
+BinEdges = dateshift(min(Photos.CaptureTime),'start','month'): ...
+           caldays(1): ...
+           dateshift(max(Photos.CaptureTime),'end','month');
+figure
+plot(BinEdges(1:end-1)', ...
+     [histcounts(Photos.CaptureTime(Photos.CameraNo==1),BinEdges)', ...
+      histcounts(Photos.CaptureTime(Photos.CameraNo==2),BinEdges)', ...
+      histcounts(Photos.CaptureTime(Photos.CameraNo==1&Photos.QualityOk),BinEdges)', ...
+      histcounts(Photos.CaptureTime(Photos.CameraNo==2&Photos.QualityOk),BinEdges)'])
+legend({'Camera 1 images', 'Camera 2 images', ...
+        'Camera 1 quality images', 'Camera 2 quality images'})
+ylabel('Number of images/day')
  
-%% Sort images
+%% Sort images into mtched pairs
 [TimeMatchedPhotos] = timeMatchPhotos(Photos);
 
 %% Read in timeseries data
@@ -81,13 +129,13 @@ ShortlistPhotos = TimeMatchedPhotos(~isnan(TimeMatchedPhotos.LagoonLevel),:);
 
 % remove low quality photos
 for ii=1:size(ShortlistPhotos,1)
-    if ~isnan(ShortlistPhotos.Cam1Photo(ii));
-        if ~Photos.QualityOk(ShortlistPhotos.Cam1Photo(ii));
+    if ~isnan(ShortlistPhotos.Cam1Photo(ii))
+        if ~Photos.QualityOk(ShortlistPhotos.Cam1Photo(ii))
             ShortlistPhotos.Cam1Photo(ii) = nan;
         end
     end
-    if ~isnan(ShortlistPhotos.Cam2Photo(ii));
-        if ~Photos.QualityOk(ShortlistPhotos.Cam2Photo(ii));
+    if ~isnan(ShortlistPhotos.Cam2Photo(ii))
+        if ~Photos.QualityOk(ShortlistPhotos.Cam2Photo(ii))
             ShortlistPhotos.Cam2Photo(ii) = nan;
         end
     end
@@ -148,7 +196,7 @@ while ii <= NoToProcess
     WetBdy2 = ShortlistPhotos.WetBdy(ThisLoop);
     
     fprintf('Camera1: ')
-    [Twist1, WetBdy1] = LagoonEdgePosition(Photo1FileName, ...
+    [Twist1, WetBdy1] = lagoonEdgePosition(Photo1FileName, ...
                                            WL, Config.Cam1, ...
                                            Config.FgBgMask1, ...
                                            Config.SeedPixel1, ...
@@ -156,7 +204,7 @@ while ii <= NoToProcess
     
     Twist2 = [Twist1(:,1),-Twist1(:,2),-Twist1(:,3)];
     fprintf('Camera2: ')
-    [ ~    , WetBdy2] = LagoonEdgePosition(Photo2FileName, ...
+    [ ~    , WetBdy2] = lagoonEdgePosition(Photo2FileName, ...
                                            WL, Config.Cam2, ...
                                            Config.FgBgMask2, ...
                                            Config.SeedPixel2, ...
@@ -299,6 +347,7 @@ UniquePhotoDates = unique(PhotoDates);
 
 HT = nan(size(UniquePhotoDates));
 LT = nan(size(UniquePhotoDates));
+ST = nan(size(UniquePhotoDates));
 
 for ii = 1:size(UniquePhotoDates)
     TodaysPhotos = PhotoDates == UniquePhotoDates(ii);
