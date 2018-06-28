@@ -2,11 +2,11 @@
 
 %ImageDump = 'H:\Hapua\Individual_Hapua\Hurunui\PhotoRecord\HighRes'; % move images from here
 %ImageDump = 'H:\Hapua\Individual_Hapua\Hurunui\PhotoRecord\Camera 2';
-ImageDump = 'C:\Users\measuresrj\OneDrive - NIWA\pics';
+ImageDump = 'C:\projects\pics';
 
 ImageStore = 'C:\Users\measuresrj\OneDrive - NIWA\Hapua\Hurunui\PhotoRecord\ImageStore'; % store organised images here
 
-CreateCopy = true; % true = copy, false = move
+CreateCopy = false; % true = copy, false = move
 
 % Get list of image files
 PhotoFileList = dir(fullfile(ImageDump,'Hurunui*.jpg'));
