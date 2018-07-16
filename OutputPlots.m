@@ -89,21 +89,7 @@ xlim(XRange)
 ylabel('Offshore Sig. wave height, H_s (m)')
 
 %% Longterm multi panel timeseries plot
-KeyDates = {'12Oct2015','01Nov2015'; ... % Well connected lagoon - short outlet channel
-            '05Nov2015','29Nov2015'; ... % Perched lagoon with extended outlet - at end of period small seaward truncation of outlet channel
-            '12May2016','15May2016'; ... % Outlet channel migration widening lagoon
-            '13Jul2016','15Jul2016'; ... % Lagoon flood due to small river flood when already perched
-            '18Nov2016','20Nov2016'; ... % Outlet channel migration widening lagoon
-            '19Jan2017','22Jan2017'; ... % River flood lagoon widening
-            '16Feb2017','28Feb2017'; ... % Southwards offset driven by southwards longshore transport - sufficient to cause perched lagoon level
-            '13Jun2017','16Jun2017'; ... % Wave overtopping lagoon narrowing
-            '21Jul2017','23Jul2017'};    % Primary breach (+ some wave overtopping narrowing and some flood widening!)
-% KeyDates = {'19Jan2017','22Jan2017'; ... % River flood lagoon widening
-%             '01May2017','10Jun2017'; ... % Migration
-%             '13Jun2017','16Jun2017'; ... % Wave overtopping lagoon narrowing
-%             '21Jul2017','23Jul2017'};    % Primary breach (+ some wave overtopping narrowing and some flood widening!)
 
-KeyDates = datetime(KeyDates,'InputFormat','ddMMMuuuu');
 Alphabet = num2cell('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 DateLabels = Alphabet(1:size(KeyDates,1));
 
@@ -281,13 +267,13 @@ set(LegWidth, 'Position', [0.08, 0.64, 0.03, 0.09], ...
               'color', [1,1,1])
 title(LegWidth, {'Width at:'; '(see Figure 2)'}, 'FontWeight', 'Normal')
 
-% Top x-axis labels
+% Add vertical red bands to show key dates and label along top x-axis
 TopAx = axes('XAxisLocation', 'top', 'YTick', [], 'color', 'none', ...
              'Position', [0.07, AxPos(2), 0.86, AxPos(4)], ...
              'FontSize', 9, 'TickDir', 'out', ...
              'TickLength', [0.005,0.005], ...
              'XLim', datenum(XRange), ...
-             'XTick', datenum(mean(KeyDates,2)), ...
+             'XTick', datenum(mean(Config.KeyDates,2)), ...
              'XTickLabels', DateLabels, ...
              'XColor','r', ...
              'TickLength', [0,0]);
@@ -295,9 +281,9 @@ TopAx = axes('XAxisLocation', 'top', 'YTick', [], 'color', 'none', ...
 %              'GridColor','r', ...
 %              'GridAlpha', 0.5, ...
 %              'XGrid', 'on');
-for DateNo = 1:size(KeyDates,1)
+for DateNo = 1:size(Config.KeyDates,1)
     hold on
-    patch(TopAx,datenum(KeyDates(DateNo,[1,2,2,1])),[1,1,0,0],'r', ...
+    patch(TopAx,datenum(Config.KeyDates(DateNo,[1,2,2,1])),[1,1,0,0],'r', ...
           'EdgeColor', 'none', 'FaceAlpha', 0.2);
 end
 uistack(TopAx,'bottom')
