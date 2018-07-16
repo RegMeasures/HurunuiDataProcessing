@@ -18,5 +18,6 @@ To do:
 - [x] improve cleanWetBdy so it removes the artificial edges at the edge of the 
       frame near the camera
 - [x] check order of twist measurement, distortion correction, etc
-- [ ] move image animation into seperate script
+- [x] move image animation into seperate script
 - [ ] investigate options for online (open?) storage of image data...
+- [ ] adjust image quality analysis to pick up the issue when it auto focusses on the dirty lens...
