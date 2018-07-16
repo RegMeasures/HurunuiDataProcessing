@@ -132,4 +132,4 @@ Config.KeyDates = {'12Oct2015','01Nov2015'; ... % Well connected lagoon - short 
 %                    '13Jun2017','16Jun2017'; ... % Wave overtopping lagoon narrowing
 %                    '21Jul2017','23Jul2017'};    % Primary breach (+ some wave overtopping narrowing and some flood widening!)
 
-Config.KeyDates = datetime(KeyDates,'InputFormat','ddMMMuuuu');
+Config.KeyDates = datetime(Config.KeyDates,'InputFormat','ddMMMuuuu');
