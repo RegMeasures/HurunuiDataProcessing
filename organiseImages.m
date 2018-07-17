@@ -1,15 +1,42 @@
-% ORGANISEIMAGES   Sort photos into preffered directory structure
+function organiseImages(ImageDumpFolder, CreateCopy)
+% ORGANISEIMAGES   Sort hurunui photos into preffered directory structure
+%   Moves (or optionally copies) images from a single folder into an
+%   organised file structure of the format:
+%       ...\YYYY\MM\CameraId\Image.jpg
+%
+%   The root directory is taken from the DataFolder and PhotoFolder 
+%   variables stored in HurunuiAnalaysisConfig (the full directory path is
+%   given by DataFolder\PhotoFolder).
+%
+%   ORGANISEIMAGES relies on the image file names being in the format 
+%   "CameraID_YY-MM-DD_HH-MM-SS-SS.jpg". For example: 
+%   "Hurunui1_18-06-15_12-28-52-23.jpg"
+%
+%   ORGANISEIMAGES(ImageDumpFolder, CreateCopy)
+%
+%   ImageDumpFolder = the path of the folder where the unsorted images are
+%                     stored. If not supplied the user will be prompted to 
+%                     select it.
+%   CreateCopy = Boolean value indicating whether to move files (false,
+%                default) or copy them (true).
+%
+%   See also: HURUNUIANALYSISCONFIG
 
-%ImageDump = 'H:\Hapua\Individual_Hapua\Hurunui\PhotoRecord\HighRes'; % move images from here
-%ImageDump = 'H:\Hapua\Individual_Hapua\Hurunui\PhotoRecord\Camera 2';
-ImageDump = 'C:\projects\pics';
+if ~exist('ImageDumpFolder', 'var') || isempty(ImageDumpFolder)
+    ImageDumpFolder = uigetdir([], 'Select folder containing unsorted images');
+end
 
-ImageStore = 'C:\Users\measuresrj\OneDrive - NIWA\Hapua\Hurunui\PhotoRecord\ImageStore'; % store organised images here
+if ~exist('CreateCopy', 'var') || isempty(CreateCopy)
+    CreateCopy = false; % true = copy, false = move
+end
 
-CreateCopy = false; % true = copy, false = move
+Config = HurunuiAnalysisConfig;
+ImageStore = fullfile(Config.DataFolder, Config.PhotoFolder); % store organised images here
+
+%% Examine images
 
 % Get list of image files
-PhotoFileList = dir(fullfile(ImageDump,'Hurunui*.jpg'));
+PhotoFileList = dir(fullfile(ImageDumpFolder,'Hurunui*.jpg'));
 
 % Get info to split into directories
 FileName = {PhotoFileList.name}';
@@ -29,6 +56,7 @@ for Year = unique(CaptureYear)'
     % File photos by month
     for Month = unique(CaptureMonth(CaptureYear == Year))'
         MonthDir = fullfile(YearDir,num2str(Month,'%02d'));
+        fprintf('Filing photos in %s\n',MonthDir)
         
         % Create month directory if not already present
         if ~exist(MonthDir,'dir')
@@ -55,10 +83,10 @@ for Year = unique(CaptureYear)'
                     % file not already there 
                     if CreateCopy
                         % Copy
-                        copyfile(fullfile(ImageDump,cell2mat(FileToMove)),CameraDir)
+                        copyfile(fullfile(ImageDumpFolder,cell2mat(FileToMove)),CameraDir)
                     else
                         % Move CameraID
-                        movefile(fullfile(ImageDump,cell2mat(FileToMove)),CameraDir)
+                        movefile(fullfile(ImageDumpFolder,cell2mat(FileToMove)),CameraDir)
                     end
                 end
             end
