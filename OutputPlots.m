@@ -91,7 +91,7 @@ ylabel('Offshore Sig. wave height, H_s (m)')
 %% Longterm multi panel timeseries plot
 
 Alphabet = num2cell('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-DateLabels = Alphabet(1:size(KeyDates,1));
+DateLabels = Alphabet(1:size(Config.KeyDates,1));
 
 % set up figure size and margins
 ax = figure_ts(6,datenum(XRange),0,'');

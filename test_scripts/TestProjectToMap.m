@@ -54,7 +54,8 @@ WL = mean(LagoonWE.Elevation);
                             LagoonWE.Easting, LagoonWE.Northing]);
                         
 % write projected outputs to GIS
-imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\15-10-06_1530')
+imageAnalysis2GIS(Config, '..\outputs\15-10-06_1530', ...
+                  TestImage1, TestImage2, WL, Twist, WetBdy, Offsets)
 
 %% Project image 2
 
@@ -73,7 +74,8 @@ WatersEdge = WatersEdge.ncst{1,1};
 testProjectToMapLooper(Config, TestImage1, TestImage2, WL, WatersEdge)
 
 % write projected outputs to GIS
-imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\15-08-26_1430')
+imageAnalysis2GIS(Config, '..\outputs\15-08-26_1430', ...
+                  TestImage1, TestImage2, WL, Twist, WetBdy, Offsets)
 
 %% Project image 3
 
@@ -92,7 +94,8 @@ WatersEdge = [cell2mat(WatersEdge.ncst(1:77,1)); nan(1,2); cell2mat(WatersEdge.n
 testProjectToMapLooper(Config, TestImage1, TestImage2, WL, WatersEdge)
 
 % write projected outputs to GIS
-imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\17-05-24_1245')
+imageAnalysis2GIS(Config, '..\outputs\17-05-24_1245', ...
+                  TestImage1, TestImage2, WL, Twist, WetBdy, Offsets)
 
 %% Project image 4
 
@@ -111,7 +114,8 @@ WatersEdge = cell2mat(WatersEdge.ncst);
 Twist = testProjectToMapLooper(Config,TestImage1, TestImage2, WL, WatersEdge);
 
 % write projected outputs to GIS
-imageAnalysis2GIS(TestImage1,TestImage2,WL,Config,'..\outputs\17-07-26_0915');
+imageAnalysis2GIS(Config, '..\outputs\17-07-26_0915', ...
+                  TestImage1, TestImage2, WL, Twist, WetBdy, Offsets)
                    
 %% Buzz saw space-for-time substituion example
 % load test image
