@@ -24,6 +24,8 @@ function imageAnalysis2GIS(Config, FileName, Cam1Image, Cam2Image, ...
 if exist('WetBdy','var') && ~isempty(WetBdy)
     % prep data for shapewrite
     PolylineData = WetBdy;
+    RepeatPoints = [all(PolylineData(1:end-1, :) == PolylineData(2:end, :), 2); false];
+    PolylineData = PolylineData(~RepeatPoints, :);
     DataGaps = find(isnan(PolylineData(:,1)));
     PolylineData = PolylineData(setdiff(1:end, DataGaps),:);
     DataGaps = unique(DataGaps - (1:length(DataGaps))');
@@ -33,6 +35,18 @@ if exist('WetBdy','var') && ~isempty(WetBdy)
     PolylineData = PolylineData(DataBlocks>1);
     % write out shapefile
     shapewrite([FileName,'_WetBdy.shp'], 'polyline', PolylineData)
+%     NoOfLines = size(PolylineData, 1);
+%     ShapeData = struct('Geometry', repmat({'Line'}, [NoOfLines, 1]), ...
+%                        'BoundingBox', cell(NoOfLines, 1), ...
+%                        'X', cellfun(@(x) [x(:,1)', NaN], PolylineData, 'UniformOutput', false), ...
+%                        'Y', cellfun(@(x) [x(:,2)', NaN], PolylineData, 'UniformOutput', false), ...
+%                        'Id', num2cell(zeros(NoOfLines,1)));
+%     for LineNo = 1:NoOfLines
+%         ShapeData(LineNo).BoundingBox = ...
+%             [min(ShapeData(LineNo).X), min(ShapeData(LineNo).Y); ...
+%              max(ShapeData(LineNo).X), max(ShapeData(LineNo).Y)];
+%     end
+%     shapewrite(ShapeData, [FileName,'_WetBdy'])
 end
 
 %% Export shapefile of offsets
