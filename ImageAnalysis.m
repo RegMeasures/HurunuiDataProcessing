@@ -37,7 +37,7 @@
 %
 %   See Also: HURUNUIANALYSISCONFIG, ORGANISEIMAGES, GENPHOTODATATABLE, 
 %             PHOTOQUALITY, TIMEMATCHPHOTOS, LAGOONEDGEPOSITION,
-%             PROPDISTLT, MEASURELAGOONWIDTH
+%             PROPDISTLT, MEASURELAGOONWIDTH, TIMESERIESANALYSIS.
 
 %% Setup
 
@@ -50,6 +50,12 @@ Config = HurunuiAnalysisConfig;
 
 % get screensize for plot setups
 ScrSz = get(groot, 'ScreenSize');
+
+%% Read in timeseries data
+
+% Read lagoon time series (already processed by TimeseriesAnalysis)
+LagoonTS = readtable('outputs\LagoonTS.csv');
+LagoonTS.DateTime = datetime(LagoonTS.DateTime);
 
 %% Find available images and extract key information
 AllPhotos = genPhotoDataTable(fullfile(Config.DataFolder,Config.PhotoFolder));
@@ -104,12 +110,6 @@ ylabel('Number of images/day')
  
 %% Sort images into mtched pairs
 [TimeMatchedPhotos] = timeMatchPhotos(Photos);
-
-%% Read in timeseries data
-
-% Read lagoon time series (already processed)
-LagoonTS = readtable('outputs\LagoonTS.csv');
-LagoonTS.DateTime = datetime(LagoonTS.DateTime);
 
 %% Assign lagoon level info to image times
 TimeMatchedPhotos.LagoonLevel = interp1(LagoonTS.DateTime, ...

@@ -19,6 +19,7 @@ Config = HurunuiAnalysisConfig;
 
 %% Load data
 
+% Read image data (processed by ImageAnalysis)
 load('outputs\PhotoDatabase.mat');
 load('outputs\ShortlistPhotos.mat')
 
