@@ -2,19 +2,23 @@ function Config = HurunuiAnalysisConfig()
 %HURUNUIANALYSISCONFIG Setup ready to run analysis scripts
 %   Config = HURUNUIANALYSISCONFIG
 
+%% Overall settings
+Config.StartTime = datetime(2015,7,1);
+Config.EndTime = datetime(2017,10,1);
+
 %% Data file locations
 
 % Main data drive/folder
-%Config.DataFolder = '\\engcad4\GISdump\Richard\';
-%Config.DataFolder = 'E:\Hurunui';
 Config.DataFolder = fullfile(getenv('USERPROFILE'),'OneDrive - NIWA',...
                              'Hapua\Hurunui');
 
 % River flow timeseries from ECan web services
 Config.HurunuiSH1EcanData = 'http://data.ecan.govt.nz/data/79/Water/River%20stage%20flow%20data%20for%20individual%20site/CSV?SiteNo=65101&Period=All&StageFlow=River%20Flow';
 
-% Lagoon level timeseries exported from NEON
-Config.LagoonWLFile = '\TimeseriesData\NIWA_levelData.csv';
+% Lagoon level timeseries from NIWA's Aquarius database
+Config.LagoonWLSiteID = 65119;
+Config.LagoonWLDataId = 'HG.Master';
+Config.AquariusHostURL = 'aquarius.niwa.co.nz';
 
 % Lagoon hypsometry
 Config.HypsometryFile = '\TimeseriesData\LagoonHypsometry.xlsx';
@@ -40,7 +44,7 @@ Config.SalinityFolder = 'TimeseriesData\SalinityTS';
 % Photo directory containing all images
 Config.PhotoFolder = '\PhotoRecord\ImageStore';
 
-%% Timing and datum corrections and adjustments
+%% Data corrections and adjustments
 
 % Vertical offsets
 Config.LagoonOffset = -1.1; %conversion from local gauge datum to LVD-37

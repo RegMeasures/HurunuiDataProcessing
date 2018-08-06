@@ -32,28 +32,21 @@ clear HurunuiCSV HurCellArray
 % Apply time delay to account for travel time from SH1 to coast
 RiverTS.DateTime = RiverTS.DateTime + Config.SH1_to_lagoon;
 
-% Load lagoon water level data
-LagoonTS = readtable(fullfile(Config.DataFolder,Config.LagoonWLFile), ...
-                     'Delimiter', ',', ...
-                     'HeaderLines', 1, ...
-                     'ReadVariableNames', false, ...
-                     'Format', '%q %q %f');
-LagoonTS.Properties.VariableNames = {'Date','Time','WL'};
+% Load lagoon water level data from web
+AuthToken = aquariusGetAuthToken(Config.AquariusHostURL);
+LagoonTS = aquariusGetData(Config.AquariusHostURL, Config.LagoonWLSiteID, ...
+                           Config.LagoonWLDataId, Config.StartTime, ...
+                           Config.EndTime, AuthToken, "+12:00");
 
-% convert WL to metres
-LagoonTS.WL = LagoonTS.WL / 1000; 
+% Remove the columns we're not using
+LagoonTS.RangeNumber = [];
+LagoonTS.Quality = [];
+LagoonTS.Interpolation = [];
+LagoonTS.Approval = [];
+LagoonTS.Properties.VariableNames = {'DateTime','WL'};
 
-% apply datum correction
+% apply datum correction to LVD-37
 LagoonTS.WL = LagoonTS.WL + Config.LagoonOffset; 
-
-% Convert Date and Time cols to datenum
-LagoonTS.DateTime = datetime(strcat(LagoonTS.Date,LagoonTS.Time), ...
-                             'InputFormat', 'dd/MM/yyyyHH:mm:ss', ...
-                             'Format', 'dd/MM/yyyy HH:mm');
-LagoonTS.Date = []; % Remove date col as no longer needed
-LagoonTS.Time = []; % Remove Time col as no longer needed
-LagoonTS = [LagoonTS(:,2),LagoonTS(:,1)]; % re-order columns
-LagoonTS = flipud(LagoonTS); % reverse row order (so time increases)
 
 % Load Lagoon Hypsometry
 Hypsometry = readtable(fullfile(Config.DataFolder,Config.HypsometryFile),...
@@ -178,8 +171,6 @@ clear LoggerData LoggerInterval FileNo
 DataOk = true(size(LagoonTS,1),1);
 DataOk(LagoonTS.WL>3.7) = false;
 DataOk(LagoonTS.WL<-0.1) = false;
-DataOk(LagoonTS.DateTime < ...
-   datetime('8/6/2015 15:00', 'InputFormat', 'dd/MM/yyyy HH:mm')) = false;
 LagoonTS = LagoonTS(DataOk,:);
 figure
 plot(LagoonTS.DateTime,LagoonTS.WL)
