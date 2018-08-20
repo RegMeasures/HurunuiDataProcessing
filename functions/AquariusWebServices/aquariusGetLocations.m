@@ -27,6 +27,12 @@ function LocationTable = aquariusGetLocations(Host, LocationFilter, AuthToken, U
 %                                 LocationFilter='LocationName=*Hurunui*')
 
 if ~exist('AuthToken','var') || isempty(AuthToken)
+    if ~exist('Username','var')
+        Username = [];
+    end
+    if ~exist('Password','var')
+        Password = [];
+    end
     AuthToken = aquariusGetAuthToken(Host, Username, Password);
 end
 
@@ -38,7 +44,7 @@ end
 AquariusURL = ['http://',Host,'/AQUARIUS/Publish/AquariusPublishRestService.svc/'];
 myReadTable = @(filename)readtable(filename,'ReadVariableNames',true, ...
                                    'Delimiter',',');
-Options = weboptions('ContentReader',myReadTable);
+Options = weboptions('ContentReader',myReadTable,'Timeout',20);
 
 LocationTable = webread([AquariusURL,RequestString], Options);
 

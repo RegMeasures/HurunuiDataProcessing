@@ -14,6 +14,12 @@ function DatasetTable = aquariusListDatasets(Host, SiteId, AuthToken, ...
 
     
 if ~exist('AuthToken','var') || isempty(AuthToken)
+    if ~exist('Username','var')
+        Username = [];
+    end
+    if ~exist('Password','var')
+        Password = [];
+    end
     AuthToken = aquariusGetAuthToken(Host, Username, Password);
 end
 
@@ -22,7 +28,7 @@ RequestString = sprintf('GetDataSetsList?token=%s&locId=%i', AuthToken, SiteId);
 AquariusURL = ['http://',Host,'/AQUARIUS/Publish/AquariusPublishRestService.svc/'];
 myReadTable = @(filename)readtable(filename,'ReadVariableNames',true, ...
                                    'Delimiter',',');
-Options = weboptions('ContentReader',myReadTable);
+Options = weboptions('ContentReader',myReadTable,'Timeout',20);
 
 DatasetTable = webread([AquariusURL,RequestString], Options);
 
