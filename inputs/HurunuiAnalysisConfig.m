@@ -99,6 +99,7 @@ Config.SeedPixel2 = [1334, 950];
 Config.StandardWL = 1.5;
 
 %% Spatial parameters
+
 % Transect lines
 TransectShp = '100mTransects_NZTM_clipped';
 Transects = m_shaperead(TransectShp);
@@ -119,6 +120,12 @@ Config.Beachslope = 0.13;
 
 % Barrier crest height
 Config.CrestHeight = 3.0; % In reality heights are generally higher - up to approximately 4m, but this depends on barrier conditoion. 3m is min height?
+
+%% Parameters for sediment transport and runup equations
+Config.Gravity = 9.81; % m/s^2
+Config.Rho = 1025;     % Density of seawater (kg/m^3)
+Config.Gamma = 0.5;    % Ratio of water depth at breakpoint to breaking wave height (WaveHeightAtBreaking = Gamma x WaterDepthAtBreakPoint)
+Config.K = 0.21;       % Longshore transport coefficient
 
 %% Key periods for outputs
 

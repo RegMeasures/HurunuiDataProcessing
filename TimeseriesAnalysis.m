@@ -45,6 +45,9 @@ LagoonTS.Interpolation = [];
 LagoonTS.Approval = [];
 LagoonTS.Properties.VariableNames = {'DateTime','WL'};
 
+% Remove the timezone (everything is in +12:00)
+LagoonTS.DateTime.TimeZone = '';
+
 % apply datum correction to LVD-37
 LagoonTS.WL = LagoonTS.WL + Config.LagoonOffset; 
 
@@ -54,6 +57,17 @@ Hypsometry = readtable(fullfile(Config.DataFolder,Config.HypsometryFile),...
                    
 % Load Sumner sea level data
 % (exported from Tideda as 15 minute averaged data, synchronised to interval)
+% SumnerTS = aquariusGetResampledData(Config.AquariusHostURL, 66699, ...
+%                                     'HG.Master', Config.StartTime, ...
+%                                     Config.EndTime, minutes(15), ...
+%                                     AuthToken, "+12:00");
+% SumnerTS.RangeNumber = [];
+% SumnerTS.Quality = [];
+% SumnerTS.Interpolation = [];
+% SumnerTS.Approval = [];
+% SumnerTS.Properties.VariableNames = {'DateTime','WL'};
+% SumnerTS.DateTime.TimeZone = '';
+                       
 SumnerTS = readtable(fullfile(Config.DataFolder,Config.SumnerFile),...
                      'Delimiter',',',...
                      'HeaderLines',2,...
@@ -114,6 +128,24 @@ WaveModTS.Properties.VariableNames = {'DateTime', ...
                                       'YTransp', ...
                                       'XWForce', ...
                                       'YWForce'};
+WaveModTS.Properties.VariableUnits = {'Datetime', ...
+                                      'm', ...
+                                      's', ...
+                                      's', ...
+                                      's', ...
+                                      'degrees', ...
+                                      'degrees', ...
+                                      'degrees', ...
+                                      'm/s', ...
+                                      'm/s', ...
+                                      'm/s', ...
+                                      'm/s', ...
+                                      'm', ...
+                                      'm', ...
+                                      'm3/s', ...
+                                      'm3/s', ...
+                                      'N/m2', ...
+                                      'N/m2'};
 
 % Read salinity logger data
 SalinityFiles = rdir(fullfile(Config.DataFolder, ...
@@ -142,6 +174,7 @@ SalinityTS = struct2table(SalinityTS);
 SalinityTS = sortrows(SalinityTS,1);
 SalinityTS.SP = gsw_SP_from_C(SalinityTS.Cond,SalinityTS.Temp,0);
 clear LoggerData LoggerInterval FileNo
+
 %% Data QA
 
 % Water Level Timeseries
@@ -192,6 +225,9 @@ DataOk = true(size(HurunuiBaroTS,1),1);
 DataOk(HurunuiBaroTS.Baro > 1100) = false;
 DataOk(HurunuiBaroTS.Baro < 900) = false;
 HurunuiBaroTS = HurunuiBaroTS(DataOk,:);
+% Remove bias between baro TS due to elevation
+HurunuiBaroTS.Baro = HurunuiBaroTS.Baro - ...
+                     (mean(HurunuiBaroTS.Baro) - mean(SumnerBaroTS.Baro));
 % Plot
 hold on
 plot(HurunuiBaroTS.DateTime,HurunuiBaroTS.Baro,'r-'); 
@@ -202,36 +238,6 @@ figure
 plot(Hypsometry.Volume,Hypsometry.Elevation,'-xb')
 xlabel('Lagoon volume [m^3]')
 ylabel('Lagoon water surface elevation [m-LVD]')
-
-% Wave data
-figure
-wind_rose(WaveModTS.Dir, WaveModTS.Hsig, ...
-          'di',0:5, ...
-          'dtype', 'meteo', ...
-          'lablegend', 'H_s (m)', ...
-          'percbg','none', ...
-          'quad',0, ...
-          'compass',false, ...
-          'bgcolor','none', ...
-          'cmap',parula, ...
-          'lwidth',0.1, ...
-          'lstyle','none', ...
-          'ci', 0, ...
-          'n', 72)
-hold on
-plot([0.37,12.5]*sind(Config.ShoreNormalDir), ...
-     [0.37,12.5]*cosd(Config.ShoreNormalDir), ...
-     'k-', 'LineWidth', 4)
-% quiver(0.37*sind(Config.ShoreNormalDir), ...
-%        0.37*cosd(Config.ShoreNormalDir), ...
-%        13.5*sind(Config.ShoreNormalDir), ...
-%        13.5*cosd(Config.ShoreNormalDir), ...
-%        'k-', 'LineWidth', 3, 'MaxHeadSize', 0.25)
-%  text(12.5*sind(Config.ShoreNormalDir), ...
-%       12.5*cosd(Config.ShoreNormalDir), ...
-%       {'Shore normal', 'direction'}, 'Rotation', -(Config.ShoreNormalDir-90))
-export_fig 'outputs\ModelWaveRose.png' -transparent -m 5
-
 
 clear DataOk WLchange
 
@@ -249,7 +255,7 @@ HurunuiTide.Anomaly = fillmissing(HurunuiTide.Anomaly, 'linear');
 [HurunuiTide.Astronomic] = ...
     AstronomicTide(fullfile(Config.DataFolder,Config.HurunuiTidalConstFile),...
                    datenum(HurunuiTide.DateTime), Config.TimeZone);
-
+               
 % Put Hurunui barometric pressure reading onto same timeseries
 % Compute barometric effect
 HurunuiBaroTS.BaroEffect = -100*(HurunuiBaroTS.Baro-1000)/(1025*9.81);
@@ -267,73 +273,139 @@ plot(HurunuiTide.DateTime,HurunuiTide.Final,'b')
 legend('Sumner observed','Hurunui calculated')
 ylabel('Sea level [mLVD]')
 
-%% Calculate wave parameters
+%% Calculate runup height
 
-% Wave angle relative to beach
-WaveModTS.Angle = angleDiff(deg2rad(Config.ShoreNormalDir), deg2rad(WaveModTS.Dir));
-WaveModTS.OnshoreWaves = WaveModTS.Angle>deg2rad(-89) & WaveModTS.Angle<deg2rad(89);
+% wave angle relative to beach [radians] (at ~10m depth)
+WaveModTS.PkAngle = angleDiff(deg2rad(Config.ShoreNormalDir), deg2rad(WaveModTS.Dir));
 
-% Set Hsig to zero if local waves are travelling offshore
+% Flag onshore directed waves and set offshore directed waves to have Hs=0
+WaveModTS.OnshoreWaves = WaveModTS.PkAngle>deg2rad(-89) & WaveModTS.PkAngle<deg2rad(89);
 WaveModTS.Hsig(~WaveModTS.OnshoreWaves) = 0;
+WaveModTS.PkAngle(~WaveModTS.OnshoreWaves) = 0;
 
-% Reverse shoal model data to deep water (needed for some equations)
-WaveModTS.k = 2*pi./WaveModTS.Wlen;
-WaveModTS.n = 0.5 * (1 + 2*WaveModTS.k.*WaveModTS.Depth ./ ...
-                         sinh(2*WaveModTS.k.*WaveModTS.Depth));
+% wave number (k) and ratio of group speed (celerity) to wave speed (n) (both calculated at 10m)
+WaveModTS.k_10m = 2*pi./WaveModTS.Wlen;
+WaveModTS.n_10m = 0.5 * (1 + 2*WaveModTS.k_10m.*WaveModTS.Depth ./ ...
+                         sinh(2*WaveModTS.k_10m.*WaveModTS.Depth));
+
+% Reverse shoal model data to deep water (needed for runup equations)
 WaveModTS.LoffRatio = 1 ./ tanh(2*pi*WaveModTS.Depth./WaveModTS.Wlen);
-WaveModTS.WlenOffshore = WaveModTS.Wlen .* WaveModTS.LoffRatio;
-WaveModTS.AngleOffshore = asin(max(min(WaveModTS.LoffRatio .* sin(WaveModTS.Angle),1),-1)); % min and max is to prevent tiny irregularities generating complex numbers due to calculation of asin(>1) or asin(<-1)
-WaveModTS.HsigOffshore = WaveModTS.Hsig ./ ...
-                         ((1./(2*WaveModTS.n)) .* ...
-                          (WaveModTS.LoffRatio) .* ...
-                          (cos(WaveModTS.AngleOffshore)./cos(WaveModTS.Angle))).^0.5;
-
-
-% Long shore transport potential
-% Qs = K*H^(12/5)*T(1/5)*(cos(theta))^(6/5)*sin(theta);
-% Ashton, Murray (2006) eq5
-WaveModTS.LstPot = WaveModTS.Hsig.^(12/5) .* ...
-                   WaveModTS.Tm01.^(1/5) .* ...
-                   (cos(WaveModTS.Angle)).^(6/5) .* ...
-                   sin (WaveModTS.Angle);
+WaveModTS.Wlen_Offshore = WaveModTS.Wlen .* WaveModTS.LoffRatio;
+WaveModTS.Angle_Offshore = asin(max(min(WaveModTS.LoffRatio .* sin(WaveModTS.PkAngle),1),-1)); % min and max is to prevent tiny irregularities generating complex numbers due to calculation of asin(>1) or asin(<-1)
+WaveModTS.Hsig_Offshore = WaveModTS.Hsig ./ ...
+                          ((1./(2*WaveModTS.n_10m)) .* ...
+                           (WaveModTS.LoffRatio) .* ...
+                           (cos(WaveModTS.Angle_Offshore)./cos(WaveModTS.PkAngle))).^0.5;
    
-% Runup (Stockdon et al 2006)
-WaveModTS.Runup1 = 1.1 * (0.35 * Config.Beachslope * (WaveModTS.HsigOffshore .* WaveModTS.WlenOffshore).^0.5 + ...
-                          (WaveModTS.Hsig .* WaveModTS.WlenOffshore * (0.563 * Config.Beachslope^2 + 0.004)).^0.5 / 2);
+% 2% Exceedence runup height [m] (Stockdon et al 2006)
+WaveModTS.Runup1 = 1.1 * (0.35 * Config.Beachslope * (WaveModTS.Hsig_Offshore .* WaveModTS.Wlen_Offshore).^0.5 + ...
+                          (WaveModTS.Hsig_Offshore .* WaveModTS.Wlen_Offshore * (0.563 * Config.Beachslope^2 + 0.004)).^0.5 / 2);
                   
-% Runup (Poate et al 2016 eq11)
-BuoyTS.Runup2 = 0.49 * Config.Beachslope^0.5 * BuoyTS.TzSec .* BuoyTS.HsM;
-WaveModTS.Runup2 = 0.49 * Config.Beachslope^0.5 * WaveModTS.Tm01 .* WaveModTS.Hsig;
+% 2% Exceedence runup height [m] (Poate et al 2016 eq11) assuming Tz~Tm02
+WaveModTS.Runup2 = 0.49 * Config.Beachslope^0.5 * WaveModTS.Tm02 .* WaveModTS.Hsig_Offshore;
 
+% Compare runup from the 2 equations
+figure
+histogram(WaveModTS.Runup1,'BinWidth',0.1, ...
+          'Normalization', 'probability')
+hold on
+histogram(WaveModTS.Runup2,'BinWidth',0.1, ...
+          'Normalization', 'probability')
+xlabel('2% runup height above still water level (m)')
+ylabel('Proportion of time')
+legend({'Stockdon et al (2006)','Poate et al (2016)'})
+
+figure
+plot(WaveModTS.Runup1,WaveModTS.Runup2,'x')
+xlabel('Runup [m]: Stockdon et al (2006)')
+ylabel('Runup [m]: Poate et al (2016)')
+
+figure
+% plotyy(LagoonTS.DateTime,LagoonTS{:,{'WL','SeaLevel','OP1','OP2'}}, ...
+%        LagoonTS.DateTime, LagoonTS.SP);
+plot(LagoonTS.DateTime,LagoonTS{:,{'WL','SeaLevel','OP1','OP2'}});
+datetickzoom('x')
+ylabel('Overtopping potential (m)')
+legend('Lagoon level','Sea level','Stockdon et al 2006','Poate et al 2016')
+
+%% Calculate longshore transport rate
+
+% Net direction of wave energy arriving from [radians] (at ~10m depth)
+WaveModTS.DirEnergy_10m = acos(-WaveModTS.YTransp ./ ...
+                               sqrt(WaveModTS.XTransp.^2 + WaveModTS.YTransp.^2));
+WaveModTS.DirEnergy_10m(WaveModTS.XTransp>0) = 2*pi - WaveModTS.DirEnergy_10m(WaveModTS.XTransp>0);
+
+% wave energy angle relative to beach [radians] (at ~10m depth)
+WaveModTS.Angle = angleDiff(deg2rad(Config.ShoreNormalDir), WaveModTS.DirEnergy_10m);
+
+% Total energy transport at 10m [W/m = N/s = kg.m/s3]
+% (equivalent to eq 5, Appendix A, Hicks et al 2018)
+WaveModTS.F_10m = Config.Rho * Config.Gravity * ...
+                  sqrt(WaveModTS.XTransp.^2 + WaveModTS.YTransp.^2);
+
+% Wave height at break point [m] (eq 12, Appendix A Hicks et al 2018)
+WaveModTS.Hb = (WaveModTS.F_10m*(8*Config.Gamma^0.5) / ...
+               (Config.Rho*Config.Gravity^1.5)).^(1/2.5);
+
+% Wave angle to shoreline at breakpoint [radians] 
+% (eq 13, Appendix A, Hicks et al 2018)
+WaveModTS.Angle_Break = asin(sqrt((WaveModTS.Hb/Config.Gamma)./WaveModTS.Depth) .* sin(WaveModTS.Angle));
+
+% Longshore component of wave energy at the breakpoint [W/m]
+WaveModTS.Pls_Break = WaveModTS.F_10m .* sin(WaveModTS.Angle_Break) .* cos(WaveModTS.Angle_Break);
+
+% Longshore transport
+WaveModTS.LST = WaveModTS.Pls_Break * Config.K; % transport rate in immersed weight /s
+WaveModTS.LST = WaveModTS.LST / ((2650-1027)*9.81*0.6); % transport rate in m3/s
+
+% Plot effect of refraction
 figure
 histogram(rad2deg(WaveModTS.Angle), 'BinEdges', -90:5:90, ...
           'Normalization', 'probability')
 hold on
-plot([0,0],ylim,'k-','LineWidth',3)
-xlabel('Wave approach angle relative to shore normal (degrees)')
+histogram(rad2deg(WaveModTS.Angle_Break), 'BinEdges', -90:5:90, ...
+          'Normalization', 'probability')
+YL = ylim;
+plot([0,0],YL,'k-','LineWidth',3)
+ylim(YL)
+xlabel('Wave energy approach angle relative to shore normal (degrees)')
 ylabel('Proportion of time')
-xticks(-90:30:90)
+xticks(-60:15:60)
+xlim([-60,60])
+xticklabels({'North';'45';'30';'15';'0';'15';'30';'45';'South'});
+legend({'Angle at 10m depth','Angle at breakpoint'})
+
+% Plot distribution of wave approach energy and time weighted
+[histw, histv] = histwv(rad2deg(WaveModTS.Angle_Break), WaveModTS.F_10m, ...
+                        -90, 90, 48);
+histw=histw/sum(histw);
+histv=histv/sum(histv);
+figure
+bar(-90+90/48:180/48:90-90/48, histw, 1.0, 'FaceAlpha', 0.5)
+hold on
+bar(-90+90/48:180/48:90-90/48, histv, 1.0, 'FaceAlpha', 0.5)
+YL = ylim;
+plot([0,0],YL,'k-','LineWidth',3)
+ylim(YL)
+legend({'Energy', 'Time'})
+xlabel('Wave energy approach angle at break point (degrees)')
+ylabel('Proportion of time/energy')
+xlim([-45,45])
 
 figure
-plot(WaveModTS.DateTime,WaveModTS.LstPot)
-ylabel('Longshore transport potential')
+plot(WaveModTS.DateTime,WaveModTS.LST)
+ylabel('Longshore transport rate (m^3/s)')
 
 figure
-histogram(WaveModTS.LstPot)
-plot(WaveModTS.DateTime,cumsum(WaveModTS.LstPot))
-ylabel('Cumulative longshore transport potential')
+histogram(WaveModTS.LST,'Normalization', 'probability')
+xlabel('Longshore transport rate (m^3/s)')
+ylabel('Proportion of time')
+XTL=xticklabels
+xticklabels([{'North'};XTL(2:end-1);{'South'}])
 
 figure
-subplot(2,1,1)
-histogram(WaveModTS.Runup1,'BinWidth',0.1)
-xlim([0,5])
-ylim([0,20000])
-xlabel('Runup Stockdon et al (2006)')
-subplot(2,1,2)
-histogram(WaveModTS.Runup2,'BinWidth',0.1)
-xlim([0,5])
-ylim([0,20000])
-xlabel('Runup Poate et al (2016)')
+plot(WaveModTS.DateTime,cumsum(WaveModTS.LST)*60*60)
+ylabel('Cumulative longshore transport (m^3)')
 
 %% Interpolate data onto same timesteps
 LagoonTS.Qin = interp1(RiverTS.DateTime,...
@@ -351,12 +423,12 @@ LagoonTS.WaveTs = interp1(WaveModTS.DateTime,...
 LagoonTS.WaveAngle = interp1(WaveModTS.DateTime,...
                            WaveModTS.Angle,...
                            LagoonTS.DateTime);
-LagoonTS.LstPot = interp1(WaveModTS.DateTime,...
-                          WaveModTS.LstPot,...
-                          LagoonTS.DateTime);
+LagoonTS.LST = interp1(WaveModTS.DateTime,...
+                       WaveModTS.LST,...
+                       LagoonTS.DateTime);
 LagoonTS.Runup1 = interp1(WaveModTS.DateTime,...
-                         WaveModTS.Runup1,...
-                         LagoonTS.DateTime);
+                          WaveModTS.Runup1,...
+                          LagoonTS.DateTime);
 LagoonTS.Runup2 = interp1(WaveModTS.DateTime,...
                           WaveModTS.Runup2,...
                           LagoonTS.DateTime);
@@ -370,6 +442,12 @@ datetickzoom('x')
 ylabel('Water level [m-LVD]')
 legend('Lagoon','Sea')
 
+%% Calculate Overwash Potential (Matias et al 2012)
+% LagoonTS.OP1 = max(LagoonTS.SeaLevel + LagoonTS.Runup1 - Config.CrestHeight, 0);
+% LagoonTS.OP2 = max(LagoonTS.SeaLevel + LagoonTS.Runup2 - Config.CrestHeight, 0);
+LagoonTS.OP1 = LagoonTS.SeaLevel + LagoonTS.Runup1;
+LagoonTS.OP2 = LagoonTS.SeaLevel + LagoonTS.Runup2;
+
 %% Calculate outflow (assuming static lagoon volume)
 [LagoonTS.Qout, LagoonTS.Volume] = HindcastQ(Hypsometry,LagoonTS);
 
@@ -379,22 +457,21 @@ datetickzoom('x')
 ylabel('Flow [m^3/s]')
 legend('Inflow','Outflow')
 
-%% Calculate Overwash Potential (Matias et al 2012)
-LagoonTS.OP1 = max(LagoonTS.SeaLevel + LagoonTS.Runup1 - Config.CrestHeight, 0);
-LagoonTS.OP2 = max(LagoonTS.SeaLevel + LagoonTS.Runup2 - Config.CrestHeight, 0);
-% LagoonTS.OP1 = LagoonTS.SeaLevel + LagoonTS.Runup1;
-% LagoonTS.OP2 = LagoonTS.SeaLevel + LagoonTS.Runup2;
-
-figure
-% plotyy(LagoonTS.DateTime,LagoonTS{:,{'WL','SeaLevel','OP1','OP2'}}, ...
-%        LagoonTS.DateTime, LagoonTS.SP);
-plot(LagoonTS.DateTime,LagoonTS{:,{'WL','SeaLevel','OP1','OP2'}});
-datetickzoom('x')
-ylabel('Overtopping potential (m)')
-legend('Lagoon level','Sea level','Stockdon et al 2006','Poate et al 2016')
-
 %% Save lagoon TS
 writetable(LagoonTS,'outputs\LagoonTS.csv')
 
 DailyLagoonTS = dailyStats(LagoonTS);
 writetable(DailyLagoonTS,'outputs\DailyLagoonTS.csv')
+
+%% References
+% Hicks D.M., Gorman R.M., Measures R.J., Walsh J.M., Bosserelle C. (2018) 
+%    Coastal sand budget for Southern Pegasus Bay: Stage A, NIWA Client 
+%    Report 2018062CH.
+% Matias A., Williams J.J., Masselink G., Ferreira Ó. (2012) Overwash 
+%    threshold for gravel barriers. Coast Eng 63:48–61. 
+%    http://www.sciencedirect.com/science/article/pii/S0378383911001980
+% Poate T.G., McCall R.T., Masselink G. (2016) A new parameterisation for 
+%    runup on gravel beaches. Coast Eng 117:176–190. 
+%    http://dx.doi.org/10.1016/j.coastaleng.2016.08.003
+% Stockdon H.F., Holman R.A., Howd P.A., Sallenger A.H. (2006) Empirical 
+%    parameterization of setup, swash, and runup. Coast Eng 53(7):573–588.

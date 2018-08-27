@@ -359,7 +359,7 @@ end
 for i=1:length(labs)
   ch(ch==labs(i))=[]; ch=[labs(i); ch];
 end
-set(wrAx,'children',ch);
+%set(wrAx,'children',ch);
 
 
 % N S E W labels:
