@@ -354,9 +354,12 @@ WaveModTS.Angle_Break = asin(sqrt((WaveModTS.Hb/Config.Gamma)./WaveModTS.Depth) 
 % Longshore component of wave energy at the breakpoint [W/m]
 WaveModTS.Pls_Break = WaveModTS.F_10m .* sin(WaveModTS.Angle_Break) .* cos(WaveModTS.Angle_Break);
 
-% Longshore transport
-WaveModTS.LST = WaveModTS.Pls_Break * Config.K; % transport rate in immersed weight /s
-WaveModTS.LST = WaveModTS.LST / ((2650-1027)*9.81*0.6); % transport rate in m3/s
+% Longshore transport in immersed weight per unit time (N/s)
+WaveModTS.LST = WaveModTS.Pls_Break * Config.K;
+% Longshore transport converted to bulk volume per unit time [m3/s]
+WaveModTS.LST = WaveModTS.LST / ...
+                ((Config.RhoS-Config.Rho) * Config.Gravity * ...
+                 (1-Config.VoidRatio));
 
 % Plot effect of refraction
 figure

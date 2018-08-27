@@ -122,10 +122,12 @@ Config.Beachslope = 0.13;
 Config.CrestHeight = 3.0; % In reality heights are generally higher - up to approximately 4m, but this depends on barrier conditoion. 3m is min height?
 
 %% Parameters for sediment transport and runup equations
-Config.Gravity = 9.81; % m/s^2
-Config.Rho = 1025;     % Density of seawater (kg/m^3)
-Config.Gamma = 0.5;    % Ratio of water depth at breakpoint to breaking wave height (WaveHeightAtBreaking = Gamma x WaterDepthAtBreakPoint)
-Config.K = 0.21;       % Longshore transport coefficient
+Config.Gravity = 9.81;  % m/s^2
+Config.Rho = 1025;      % Density of seawater (kg/m^3)
+Config.Gamma = 0.5;     % Ratio of water depth at breakpoint to breaking wave height (WaveHeightAtBreaking = Gamma x WaterDepthAtBreakPoint)
+Config.K = 0.02;        % Longshore transport coefficient
+Config.RhoS = 2650;     % Density of rock (kg/m^3)
+Config.VoidRatio = 0.4; % Proportion of volume taken up by voids in beach sediment deposits
 
 %% Key periods for outputs
 
