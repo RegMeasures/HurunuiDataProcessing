@@ -23,11 +23,11 @@ Config = HurunuiAnalysisConfig;
 load('outputs\PhotoDatabase.mat');
 load('outputs\ShortlistPhotos.mat')
 
-%% Export 
+%% Export start and end of key periods
 
 Alphabet = num2cell('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 PhotoDay = dateshift(ShortlistPhotos.UniqueTime,'start','day');
-for PeriodNo = 1:size(Config.KeyDates,1)
+for PeriodNo = 1:size(Config.KeyPeriods,1)
     fprintf('Outputing gis data for period %s\n', Alphabet{PeriodNo})
     
     OutputFolder = fullfile('outputs', sprintf('Period%s', Alphabet{PeriodNo}));
@@ -38,23 +38,62 @@ for PeriodNo = 1:size(Config.KeyDates,1)
     StartEndLabel = {'Start','End'};
     for StartEnd = 1:2
         % Select the next quality photo after the date of interest
-        PhotoNo = find(PhotoDay == Config.KeyDates(PeriodNo,StartEnd) & ...
+        PhotoNo = find(PhotoDay == Config.KeyPeriods(PeriodNo,StartEnd) & ...
                        ShortlistPhotos.WetBdyOK, 1);
-        % Generate the required inputs for imageAnalysis2GIS
+                   
+        % Generate the filename
         FileName = sprintf('Period%s_%s_%s', Alphabet{PeriodNo}, ...
                            StartEndLabel{StartEnd}, ...
                            datestr(ShortlistPhotos.UniqueTime(PhotoNo),'yyyy-mm-dd_HH-MM-SS'));
         FileName = fullfile(OutputFolder, FileName);
+        
+        % Generate the required inputs for imageAnalysis2GIS
         Cam1No = ShortlistPhotos.Cam1Photo(PhotoNo);
         Cam1Image = imread(fullfile(Config.DataFolder, Config.PhotoFolder, ...
                            Photos.FileSubDir{Cam1No}, [Photos.FileName{Cam1No}, '.jpg']));
         Cam2No = ShortlistPhotos.Cam2Photo(PhotoNo);
         Cam2Image = imread(fullfile(Config.DataFolder, Config.PhotoFolder, ...
                            Photos.FileSubDir{Cam2No}, [Photos.FileName{Cam2No}, '.jpg']));
+                       
         % Output the WetBdy and projected images to GIS
         imageAnalysis2GIS(Config, FileName, Cam1Image, Cam2Image, ...
                           ShortlistPhotos.LagoonLevel(PhotoNo), ...
                           ShortlistPhotos.Twist(PhotoNo,:), ...
                           ShortlistPhotos.WetBdy{PhotoNo})
     end
+end
+
+%% Export other key dates
+
+PhotoDay = dateshift(ShortlistPhotos.UniqueTime,'start','day');
+for SnapshotNo = 1:size(Config.SnapshotDates,1)
+    fprintf('Outputing gis data for snapshot %i\n', SnapshotNo)
+    
+    OutputFolder = fullfile('outputs', sprintf('Snapshot%2i', SnapshotNo));
+    if ~exist(OutputFolder,'dir')
+        mkdir(OutputFolder);
+    end
+    
+    % Select the next quality photo after the date of interest
+    PhotoNo = find(PhotoDay == Config.SnapshotDates(SnapshotNo) & ...
+                   ShortlistPhotos.WetBdyOK, 1);
+               
+    % Generate the filename
+    FileName = sprintf('Snapshot%2i_%s', SnapshotNo, ...
+                       datestr(ShortlistPhotos.UniqueTime(PhotoNo),'yyyy-mm-dd_HH-MM-SS'));
+    FileName = fullfile(OutputFolder, FileName);
+    
+    % Generate the required inputs for imageAnalysis2GIS
+    Cam1No = ShortlistPhotos.Cam1Photo(PhotoNo);
+    Cam1Image = imread(fullfile(Config.DataFolder, Config.PhotoFolder, ...
+                                Photos.FileSubDir{Cam1No}, [Photos.FileName{Cam1No}, '.jpg']));
+    Cam2No = ShortlistPhotos.Cam2Photo(PhotoNo);
+    Cam2Image = imread(fullfile(Config.DataFolder, Config.PhotoFolder, ...
+                       Photos.FileSubDir{Cam2No}, [Photos.FileName{Cam2No}, '.jpg']));
+                   
+    % Output the WetBdy and projected images to GIS
+    imageAnalysis2GIS(Config, FileName, Cam1Image, Cam2Image, ...
+                      ShortlistPhotos.LagoonLevel(PhotoNo), ...
+                      ShortlistPhotos.Twist(PhotoNo,:), ...
+                      ShortlistPhotos.WetBdy{PhotoNo})
 end

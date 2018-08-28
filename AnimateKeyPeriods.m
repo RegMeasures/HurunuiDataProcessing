@@ -28,15 +28,15 @@ if ~exist(OutputFolder,'dir')
     mkdir(OutputFolder);
 end
 
-for PeriodNo = 1:size(Config.KeyDates,1)
+for PeriodNo = 1:size(Config.KeyPeriods,1)
     fprintf('Producing video for period %s\n', Alphabet{PeriodNo})
     
-    PhotoSelectMask = ShortlistPhotos.UniqueTime >= Config.KeyDates(PeriodNo,1) & ...
-                      ShortlistPhotos.UniqueTime <= Config.KeyDates(PeriodNo,2);
+    PhotoSelectMask = ShortlistPhotos.UniqueTime >= Config.KeyPeriods(PeriodNo,1) & ...
+                      ShortlistPhotos.UniqueTime <= Config.KeyPeriods(PeriodNo,2);
     PhotosForVideo = ShortlistPhotos(PhotoSelectMask, :);
     
     FileName = sprintf('Period%s_%s', Alphabet{PeriodNo}, ...
-                       datestr(Config.KeyDates(PeriodNo,1),'yyyy-mm-dd'));
+                       datestr(Config.KeyPeriods(PeriodNo,1),'yyyy-mm-dd'));
     FileName = fullfile(OutputFolder, FileName);
     
     animatePhotos(FileName, ...
