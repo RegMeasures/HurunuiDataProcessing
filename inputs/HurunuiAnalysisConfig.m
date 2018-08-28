@@ -118,8 +118,8 @@ clear ShorelineShp Shoreline
 % Beachface slope
 Config.Beachslope = 0.13;
 
-% Barrier crest height
-Config.CrestHeight = 3.0; % In reality heights are generally higher - up to approximately 4m, but this depends on barrier conditoion. 3m is min height?
+% Barrier crest height range (from/to)
+Config.CrestHeight = [3.0, 4.1]; 
 
 %% Parameters for sediment transport and runup equations
 Config.Gravity = 9.81;  % m/s^2

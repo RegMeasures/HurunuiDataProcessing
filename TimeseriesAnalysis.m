@@ -146,6 +146,8 @@ WaveModTS.Properties.VariableUnits = {'Datetime', ...
                                       'm3/s', ...
                                       'N/m2', ...
                                       'N/m2'};
+WaveModTS = WaveModTS(WaveModTS.DateTime >= Config.StartTime & ...
+                      WaveModTS.DateTime <= Config.EndTime, :);
 
 % Read salinity logger data
 SalinityFiles = rdir(fullfile(Config.DataFolder, ...
@@ -314,19 +316,14 @@ histogram(WaveModTS.Runup2,'BinWidth',0.1, ...
 xlabel('2% runup height above still water level (m)')
 ylabel('Proportion of time')
 legend({'Stockdon et al (2006)','Poate et al (2016)'})
+export_fig 'outputs\RunupComparison1.png' -m 5
 
 figure
-plot(WaveModTS.Runup1,WaveModTS.Runup2,'x')
+scatter(WaveModTS.Runup1, WaveModTS.Runup2, 6, 'filled', ...
+        'MarkerEdgeAlpha', 0.15,'MarkerFaceAlpha', 0.15)
 xlabel('Runup [m]: Stockdon et al (2006)')
 ylabel('Runup [m]: Poate et al (2016)')
-
-figure
-% plotyy(LagoonTS.DateTime,LagoonTS{:,{'WL','SeaLevel','OP1','OP2'}}, ...
-%        LagoonTS.DateTime, LagoonTS.SP);
-plot(LagoonTS.DateTime,LagoonTS{:,{'WL','SeaLevel','OP1','OP2'}});
-datetickzoom('x')
-ylabel('Overtopping potential (m)')
-legend('Lagoon level','Sea level','Stockdon et al 2006','Poate et al 2016')
+export_fig 'outputs\RunupComparison2.png' -m 5
 
 %% Calculate longshore transport rate
 
@@ -377,6 +374,7 @@ xticks(-60:15:60)
 xlim([-60,60])
 xticklabels({'North';'45';'30';'15';'0';'15';'30';'45';'South'});
 legend({'Angle at 10m depth','Angle at breakpoint'})
+export_fig 'outputs\RefractionEffectOnAngle.png' -m 5
 
 % Plot distribution of wave approach energy and time weighted
 [histw, histv] = histwv(rad2deg(WaveModTS.Angle_Break), WaveModTS.F_10m, ...
@@ -394,21 +392,24 @@ legend({'Energy', 'Time'})
 xlabel('Wave energy approach angle at break point (degrees)')
 ylabel('Proportion of time/energy')
 xlim([-45,45])
+export_fig 'outputs\EnergyWeightedVsTimeWeightedWaveApproachAngle.png' -m 5
 
+% Plot longshore transport rate
 figure
-plot(WaveModTS.DateTime,WaveModTS.LST)
+plot(WaveModTS.DateTime, WaveModTS.LST)
 ylabel('Longshore transport rate (m^3/s)')
 
 figure
-histogram(WaveModTS.LST,'Normalization', 'probability')
+histogram(WaveModTS.LST, 'Normalization', 'probability')
 xlabel('Longshore transport rate (m^3/s)')
 ylabel('Proportion of time')
 XTL=xticklabels
 xticklabels([{'North'};XTL(2:end-1);{'South'}])
 
 figure
-plot(WaveModTS.DateTime,cumsum(WaveModTS.LST)*60*60)
-ylabel('Cumulative longshore transport (m^3)')
+plot(WaveModTS.DateTime, cumsum(WaveModTS.LST)*60*60 / 1000)
+ylabel('Cumulative longshore transport (thousand m^3)')
+export_fig 'outputs\CumulativeLongShoreTransport.png' -m 5
 
 %% Interpolate data onto same timesteps
 LagoonTS.Qin = interp1(RiverTS.DateTime,...
@@ -435,9 +436,9 @@ LagoonTS.Runup1 = interp1(WaveModTS.DateTime,...
 LagoonTS.Runup2 = interp1(WaveModTS.DateTime,...
                           WaveModTS.Runup2,...
                           LagoonTS.DateTime);
-LagoonTS.SP = interp1(SalinityTS.DateTime,...
-                      SalinityTS.SP,...
-                      LagoonTS.DateTime);
+% LagoonTS.SP = interp1(SalinityTS.DateTime,...
+%                       SalinityTS.SP,...
+%                       LagoonTS.DateTime);
 
 figure
 plot(LagoonTS.DateTime, LagoonTS{:,{'WL','SeaLevel'}});
@@ -445,11 +446,19 @@ datetickzoom('x')
 ylabel('Water level [m-LVD]')
 legend('Lagoon','Sea')
 
-%% Calculate Overwash Potential (Matias et al 2012)
+%% Calculate Runup Height (R_high) (Matias et al 2012)
 % LagoonTS.OP1 = max(LagoonTS.SeaLevel + LagoonTS.Runup1 - Config.CrestHeight, 0);
 % LagoonTS.OP2 = max(LagoonTS.SeaLevel + LagoonTS.Runup2 - Config.CrestHeight, 0);
-LagoonTS.OP1 = LagoonTS.SeaLevel + LagoonTS.Runup1;
-LagoonTS.OP2 = LagoonTS.SeaLevel + LagoonTS.Runup2;
+LagoonTS.R_high1 = LagoonTS.SeaLevel + LagoonTS.Runup1;
+LagoonTS.R_high2 = LagoonTS.SeaLevel + LagoonTS.Runup2;
+
+figure
+% plotyy(LagoonTS.DateTime,LagoonTS{:,{'WL','SeaLevel','OP1','OP2'}}, ...
+%        LagoonTS.DateTime, LagoonTS.SP);
+plot(LagoonTS.DateTime,LagoonTS{:,{'WL','SeaLevel','R_high1','R_high2'}});
+datetickzoom('x')
+ylabel('Overtopping potential (m)')
+legend('Lagoon level','Sea level','Stockdon et al 2006','Poate et al 2016')
 
 %% Calculate outflow (assuming static lagoon volume)
 [LagoonTS.Qout, LagoonTS.Volume] = HindcastQ(Hypsometry,LagoonTS);
