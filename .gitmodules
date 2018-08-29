@@ -4,3 +4,6 @@
 [submodule "functions/externals/GSW-Matlab"]
 	path = functions/externals/GSW-Matlab
 	url = https://github.com/TEOS-10/GSW-Matlab.git
+[submodule "functions/externals/legendflex-pkg"]
+	path = functions/externals/legendflex-pkg
+	url = https://github.com/kakearney/legendflex-pkg.git
