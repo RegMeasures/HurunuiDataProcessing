@@ -9,9 +9,6 @@ addpath(genpath('inputs'))
 % Read input parameters
 Config = HurunuiAnalysisConfig;
 
-% Other fixed parameters
-Gravity = 9.81;
-
 %% Load Data and apply datum corrections etc.
 
 % Load Hurunui at SH1 data from web :-)
@@ -148,6 +145,15 @@ WaveModTS.Properties.VariableUnits = {'Datetime', ...
                                       'N/m2'};
 WaveModTS = WaveModTS(WaveModTS.DateTime >= Config.StartTime & ...
                       WaveModTS.DateTime <= Config.EndTime, :);
+% Remove columns we're not using
+WaveModTS.Dspr = [];
+WaveModTS.PkDir = [];
+WaveModTS.XWindv = [];
+WaveModTS.YWindv = [];
+WaveModTS.Ubot = [];
+WaveModTS.Urms = [];
+WaveModTS.XWForce = [];
+WaveModTS.YWForce = [];
 
 % Read salinity logger data
 SalinityFiles = rdir(fullfile(Config.DataFolder, ...
@@ -175,7 +181,8 @@ end
 SalinityTS = struct2table(SalinityTS);
 SalinityTS = sortrows(SalinityTS,1);
 SalinityTS.SP = gsw_SP_from_C(SalinityTS.Cond,SalinityTS.Temp,0);
-clear LoggerData LoggerInterval FileNo
+
+clear LoggerData LoggerInterval FileNo AuthToken
 
 %% Data QA
 
@@ -278,12 +285,12 @@ ylabel('Sea level [mLVD]')
 %% Calculate runup height
 
 % wave angle relative to beach [radians] (at ~10m depth)
-WaveModTS.PkAngle = angleDiff(deg2rad(Config.ShoreNormalDir), deg2rad(WaveModTS.Dir));
+WaveModTS.Angle_10m = angleDiff(deg2rad(Config.ShoreNormalDir), deg2rad(WaveModTS.Dir));
 
 % Flag onshore directed waves and set offshore directed waves to have Hs=0
-WaveModTS.OnshoreWaves = WaveModTS.PkAngle>deg2rad(-89) & WaveModTS.PkAngle<deg2rad(89);
+WaveModTS.OnshoreWaves = WaveModTS.Angle_10m>deg2rad(-89) & WaveModTS.Angle_10m<deg2rad(89);
 WaveModTS.Hsig(~WaveModTS.OnshoreWaves) = 0;
-WaveModTS.PkAngle(~WaveModTS.OnshoreWaves) = 0;
+WaveModTS.Angle_10m(~WaveModTS.OnshoreWaves) = 0;
 
 % wave number (k) and ratio of group speed (celerity) to wave speed (n) (both calculated at 10m)
 WaveModTS.k_10m = 2*pi./WaveModTS.Wlen;
@@ -293,11 +300,12 @@ WaveModTS.n_10m = 0.5 * (1 + 2*WaveModTS.k_10m.*WaveModTS.Depth ./ ...
 % Reverse shoal model data to deep water (needed for runup equations)
 WaveModTS.LoffRatio = 1 ./ tanh(2*pi*WaveModTS.Depth./WaveModTS.Wlen);
 WaveModTS.Wlen_Offshore = WaveModTS.Wlen .* WaveModTS.LoffRatio;
-WaveModTS.Angle_Offshore = asin(max(min(WaveModTS.LoffRatio .* sin(WaveModTS.PkAngle),1),-1)); % min and max is to prevent tiny irregularities generating complex numbers due to calculation of asin(>1) or asin(<-1)
+%WaveModTS.Wlen_Offshore2 = Config.Gravity * WaveModTS.Tm02.^2 / (2*pi); % calculated from T rather than L_10m
+WaveModTS.Angle_Offshore = asin(max(min(WaveModTS.LoffRatio .* sin(WaveModTS.Angle_10m),1),-1)); % min and max is to prevent tiny irregularities generating complex numbers due to calculation of asin(>1) or asin(<-1)
 WaveModTS.Hsig_Offshore = WaveModTS.Hsig ./ ...
                           ((1./(2*WaveModTS.n_10m)) .* ...
                            (WaveModTS.LoffRatio) .* ...
-                           (cos(WaveModTS.Angle_Offshore)./cos(WaveModTS.PkAngle))).^0.5;
+                           (cos(WaveModTS.Angle_Offshore)./cos(WaveModTS.Angle_10m))).^0.5;
    
 % 2% Exceedence runup height [m] (Stockdon et al 2006)
 WaveModTS.Runup1 = 1.1 * (0.35 * Config.Beachslope * (WaveModTS.Hsig_Offshore .* WaveModTS.Wlen_Offshore).^0.5 + ...
@@ -325,6 +333,8 @@ xlabel('Runup [m]: Stockdon et al (2006)')
 ylabel('Runup [m]: Poate et al (2016)')
 export_fig 'outputs\RunupComparison2.png' -m 5
 
+WaveModTS.LoffRatio = [];
+
 %% Calculate longshore transport rate
 
 % Net direction of wave energy arriving from [radians] (at ~10m depth)
@@ -333,37 +343,60 @@ WaveModTS.DirEnergy_10m = acos(-WaveModTS.YTransp ./ ...
 WaveModTS.DirEnergy_10m(WaveModTS.XTransp>0) = 2*pi - WaveModTS.DirEnergy_10m(WaveModTS.XTransp>0);
 
 % wave energy angle relative to beach [radians] (at ~10m depth)
-WaveModTS.Angle = angleDiff(deg2rad(Config.ShoreNormalDir), WaveModTS.DirEnergy_10m);
+WaveModTS.EAngle_10m = angleDiff(deg2rad(Config.ShoreNormalDir), WaveModTS.DirEnergy_10m);
 
 % Total energy transport at 10m [W/m = N/s = kg.m/s3]
 % (equivalent to eq 5, Appendix A, Hicks et al 2018)
 WaveModTS.F_10m = Config.Rho * Config.Gravity * ...
                   sqrt(WaveModTS.XTransp.^2 + WaveModTS.YTransp.^2);
 
-% Wave height at break point [m] (eq 12, Appendix A Hicks et al 2018)
-WaveModTS.Hb = (WaveModTS.F_10m*(8*Config.Gamma^0.5) / ...
-               (Config.Rho*Config.Gravity^1.5)).^(1/2.5);
+% Water depth at break point [m] (eq 12, Appendix A Hicks et al 2018)
+WaveModTS.h_Break = (WaveModTS.F_10m * ...
+                     8 / (Config.Rho*Config.Gravity^1.5*Config.Gamma^2)).^0.4;
 
 % Wave angle to shoreline at breakpoint [radians] 
-% (eq 13, Appendix A, Hicks et al 2018)
-WaveModTS.Angle_Break = asin(sqrt((WaveModTS.Hb/Config.Gamma)./WaveModTS.Depth) .* sin(WaveModTS.Angle));
+% Original approach (eq 13, Appendix A, Hicks et al 2018)
+WaveModTS.EAngle_Break1 = asin(sqrt(WaveModTS.h_Break./WaveModTS.Depth) .* sin(WaveModTS.EAngle_10m));
+
+% New approach (eliminating an incorrect assumption of shallow water)
+WaveModTS.Cb_div_Ch = sqrt(Config.Gravity./WaveModTS.h_Break) ./ ...
+                      (Config.Gravity*WaveModTS.Tm02.*tanh(2*pi*WaveModTS.Depth./WaveModTS.Wlen)/(2*pi));
+WaveModTS.EAngle_Break = asin(sin(WaveModTS.EAngle_10m) .* WaveModTS.Cb_div_Ch);
+
+% Compare
+figure
+plot(rad2deg(WaveModTS.EAngle_Break1),rad2deg(WaveModTS.EAngle_Break),'x')
+xlim([-15,15])
+ylim([-15,15])
+xlabel('Breaker angle (Gorman shallow water assumption)')
+ylabel('Breaker angle (Improved?)')
+hold on
+plot([-15,15],[-15,15],'k:')
 
 % Longshore component of wave energy at the breakpoint [W/m]
-WaveModTS.Pls_Break = WaveModTS.F_10m .* sin(WaveModTS.Angle_Break) .* cos(WaveModTS.Angle_Break);
+WaveModTS.Pls_Break1 = WaveModTS.F_10m .* sin(WaveModTS.EAngle_Break1) .* cos(WaveModTS.EAngle_Break1);
+WaveModTS.Pls_Break = WaveModTS.F_10m .* sin(WaveModTS.EAngle_Break) .* cos(WaveModTS.EAngle_Break);
 
 % Longshore transport in immersed weight per unit time (N/s)
+WaveModTS.LST1 = WaveModTS.Pls_Break1 * Config.K;
 WaveModTS.LST = WaveModTS.Pls_Break * Config.K;
 % Longshore transport converted to bulk volume per unit time [m3/s]
+WaveModTS.LST1 = WaveModTS.LST1 / ...
+                ((Config.RhoS-Config.Rho) * Config.Gravity * ...
+                 (1-Config.VoidRatio));
 WaveModTS.LST = WaveModTS.LST / ...
                 ((Config.RhoS-Config.Rho) * Config.Gravity * ...
                  (1-Config.VoidRatio));
 
+
 % Plot effect of refraction
 figure
-histogram(rad2deg(WaveModTS.Angle), 'BinEdges', -90:5:90, ...
+histogram(rad2deg(WaveModTS.EAngle_10m), 'BinEdges', -90:5:90, ...
           'Normalization', 'probability')
 hold on
-histogram(rad2deg(WaveModTS.Angle_Break), 'BinEdges', -90:5:90, ...
+histogram(rad2deg(WaveModTS.EAngle_Break1), 'BinEdges', -90:5:90, ...
+          'Normalization', 'probability')
+histogram(rad2deg(WaveModTS.EAngle_Break), 'BinEdges', -90:5:90, ...
           'Normalization', 'probability')
 YL = ylim;
 plot([0,0],YL,'k-','LineWidth',3)
@@ -373,43 +406,80 @@ ylabel('Proportion of time')
 xticks(-60:15:60)
 xlim([-60,60])
 xticklabels({'North';'45';'30';'15';'0';'15';'30';'45';'South'});
-legend({'Angle at 10m depth','Angle at breakpoint'})
+legend({'Angle at 10m depth','Angle at breakpoint (original approach)', ...
+        'Angle at breakpoint (new approach)'}, ...
+       'Location','SouthOutside')
 export_fig 'outputs\RefractionEffectOnAngle.png' -m 5
 
-% Plot distribution of wave approach energy and time weighted
-[histw, histv] = histwv(rad2deg(WaveModTS.Angle_Break), WaveModTS.F_10m, ...
+% Plot energy weighted distribution of wave approach angle
+[histw0, ~] = histwv(rad2deg(WaveModTS.EAngle_10m), WaveModTS.F_10m, ...
                         -90, 90, 48);
-histw=histw/sum(histw);
-histv=histv/sum(histv);
+histw0=histw0/sum(histw0);
+[histw1, ~] = histwv(rad2deg(WaveModTS.EAngle_Break1), WaveModTS.F_10m, ...
+                        -90, 90, 48);
+histw1=histw1/sum(histw1);
+[histw2, ~] = histwv(rad2deg(WaveModTS.EAngle_Break), WaveModTS.F_10m, ...
+                        -90, 90, 48);
+histw2=histw2/sum(histw2);
+
 figure
-bar(-90+90/48:180/48:90-90/48, histw, 1.0, 'FaceAlpha', 0.5)
+bar(-90+90/48:180/48:90-90/48, histw0, 1.0, 'FaceAlpha', 0.5)
 hold on
-bar(-90+90/48:180/48:90-90/48, histv, 1.0, 'FaceAlpha', 0.5)
+bar(-90+90/48:180/48:90-90/48, histw1, 1.0, 'FaceAlpha', 0.5)
+bar(-90+90/48:180/48:90-90/48, histw2, 1.0, 'FaceAlpha', 0.5)
 YL = ylim;
 plot([0,0],YL,'k-','LineWidth',3)
 ylim(YL)
 legend({'Energy', 'Time'})
 xlabel('Wave energy approach angle at break point (degrees)')
-ylabel('Proportion of time/energy')
+ylabel('Proportion of energy')
 xlim([-45,45])
-export_fig 'outputs\EnergyWeightedVsTimeWeightedWaveApproachAngle.png' -m 5
+legend({'Angle at 10m depth','Angle at breakpoint (original approach)', ...
+        'Angle at breakpoint (new approach)'}, ...
+       'Location','SouthOutside')
+export_fig 'outputs\EnergyWeightedWaveApproachAngle.png' -m 5
 
 % Plot longshore transport rate
 figure
+plot(WaveModTS.DateTime, WaveModTS.LST1)
+hold on
 plot(WaveModTS.DateTime, WaveModTS.LST)
 ylabel('Longshore transport rate (m^3/s)')
+legend({'Original approach','New approach'})
 
 figure
-histogram(WaveModTS.LST, 'Normalization', 'probability')
-xlabel('Longshore transport rate (m^3/s)')
+histogram(WaveModTS.LST1*86400, 'BinEdges', -1000:50:1000, ...
+          'Normalization', 'probability')
+hold on
+histogram(WaveModTS.LST*86400, 'BinEdges', -1000:50:1000, ...
+          'Normalization', 'probability')
+xlabel('Longshore transport rate (m^3/day)')
 ylabel('Proportion of time')
-XTL=xticklabels
-xticklabels([{'North'};XTL(2:end-1);{'South'}])
+XTL=xticklabels;
+xticklabels([{'South'};XTL(2:end-1);{'North'}])
+legend({'Original approach','New approach'},'Location','SouthOutside')
 
+% Plot cumulative longshore transport
 figure
-plot(WaveModTS.DateTime, cumsum(WaveModTS.LST)*60*60 / 1000)
+plot(WaveModTS.DateTime, cumsum(WaveModTS.LST1)*60*60 / 1000,'b-')
+hold on
+plot(WaveModTS.DateTime, cumsum(WaveModTS.LST)*60*60 / 1000,'r-')
+plot(WaveModTS.DateTime, cumsum(abs(WaveModTS.LST1))*60*60 / 1000,'b--')
+plot(WaveModTS.DateTime, cumsum(abs(WaveModTS.LST))*60*60 / 1000,'r--')
 ylabel('Cumulative longshore transport (thousand m^3)')
+legend({'Net transport original approach', ...
+        'Net transport new approach', ...
+        'Gross transport original approach', ...
+        'Gross transport new approach'}, ...
+        'Location', 'Northwest')
 export_fig 'outputs\CumulativeLongShoreTransport.png' -m 5
+
+% Tidy up stuff we don't want to keep
+clear histw0 histw1 histw2 XTL YL
+WaveModTS.Cb_div_Ch = [];
+WaveModTS.EAngle_Break1 = [];
+WaveModTS.Pls_Break1 = [];
+WaveModTS.LST1 = [];
 
 %% Interpolate data onto same timesteps
 LagoonTS.Qin = interp1(RiverTS.DateTime,...

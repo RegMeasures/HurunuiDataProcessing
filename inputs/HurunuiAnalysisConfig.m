@@ -125,7 +125,7 @@ Config.CrestHeight = [3.0, 4.1];
 Config.Gravity = 9.81;  % m/s^2
 Config.Rho = 1025;      % Density of seawater (kg/m^3)
 Config.Gamma = 0.5;     % Ratio of water depth at breakpoint to breaking wave height (WaveHeightAtBreaking = Gamma x WaterDepthAtBreakPoint)
-Config.K = 0.02;        % Longshore transport coefficient
+Config.K = 0.017;        % Longshore transport coefficient
 Config.RhoS = 2650;     % Density of rock (kg/m^3)
 Config.VoidRatio = 0.4; % Proportion of volume taken up by voids in beach sediment deposits
 
