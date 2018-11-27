@@ -1,4 +1,4 @@
-%% Poster & Paper plots
+%% Longterm multi panel timeseries plot
 
 %% Setup
 
@@ -33,83 +33,17 @@ load('outputs\ShortlistPhotos.mat');
 % Load channel position TS
 load('outputs\ChannelPos.mat')
 
-%% TS plot of daily WL analysis
+%% set up figure
 
-% overview TS
-figure
-
-fill([DailyLagoonTS.Date;flipud(DailyLagoonTS.Date)],[DailyLagoonTS.MinWL;flipud(DailyLagoonTS.MaxWL)],[0.3,0.3,0.3])
-hold on
-plot(DailyLagoonTS.Date,DailyLagoonTS.MeanWL,'r-')
-xlim(XRange)
-
-% looking at range and flow variability for proxies
-figure
-DailyLagoonTS.WL_Range = DailyLagoonTS.MaxWL-DailyLagoonTS.MinWL;
-DailyLagoonTS.Qout_Range = DailyLagoonTS.MaxQout-DailyLagoonTS.MinQout;
-DailyLagoonTS.Qout_RangeRatio = DailyLagoonTS.Qout_Range./DailyLagoonTS.MeanQout;
-[AX,~,~] = plotyy(DailyLagoonTS.Date,DailyLagoonTS.WL_Range,...
-                    DailyLagoonTS.Date,DailyLagoonTS.Qout_RangeRatio);
-xlim(AX,XRange)
-ylim(AX(1),[0,2])
-ylabel(AX(1),'Lagoon water level range (m)')
-ylabel(AX(2),'Lagoon outflow variability (% of mean outflow)')
-
-figure
-plot(DailyLagoonTS.WL_Range,DailyLagoonTS.Qout_RangeRatio,'x')
-xlabel('Lagoon water level range (m)')
-ylabel('Lagoon outflow variability (% of mean outflow)')
-
-figure
-plot(DailyLagoonTS.WL_Range,DailyLagoonTS.MeanQin,'x')
-xlabel('Lagoon water level range (m)')
-ylabel('Lagoon inflow (m^3/s)')
-
-%% TS plot of outlet channel position
-
-FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 500]);
-plot(repmat(ChannelPos.UniqueTime,[3,1]),[ChannelPos.UsOffset(:),ChannelPos.DsOffset(:)],'x')
-xlim(XRange)
-legend({'Upstream end of outlet channel','Downstream end of outlet channel'}, ...
-       'Location', 'northwest')
-ylabel('Alongshore distance (North positive) from river centreline (m)')
-
-%% TS plot of flow only
-
-FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 500]);
-plot(LagoonTS.DateTime,LagoonTS.Qin)
-xlim(XRange)
-ylabel('Hapua inflow (m^3/s)')
-
-%% TS Plot of waves
-
-FigureH = figure('Position', [(ScrSz(3)/2)-600, 50, 1200, 500]);
-plot(LagoonTS.DateTime,LagoonTS.WaveHs)
-xlim(XRange)
-ylabel('Offshore Sig. wave height, H_s (m)')
-
-%% Longterm multi panel timeseries plot
-
-Alphabet = num2cell('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
-DateLabels = Alphabet(1:size(Config.KeyPeriods,1));
-
-% set up figure size and margins
+% Create figure and set size
 ax = figure_ts(6,datenum(XRange),0,'');
 FigPos = get(gcf,'pos');
-% Portrait
-% set(gcf,'pos',[FigPos(1),FigPos(2)-(1000-FigPos(4)),700,1000], ...
-%     'Color',[1,1,1])
-% Landscape
 set(gcf,'pos',[FigPos(1)-400,FigPos(2)-(900-FigPos(4)),1400,900], ...
     'Color',[1,1,1])
+
 % Adjust margins
 for ii=1:size(ax,2)
     AxPos = get(ax(ii),'Position');
-    % Portrait
-%     set(ax(ii),'Position', [AxPos(1:2), 1-2*AxPos(1), AxPos(4)], ...
-%                'FontSize', 9, 'TickDir', 'out', ...
-%                'TickLength', [0.005,0.005])
-    % Landscape
     set(ax(ii),'Position', [0.07, AxPos(2), 0.86, AxPos(4)], ...
                'FontSize', 9, 'TickDir', 'out', ...
                'TickLength', [0.005,0.005])
@@ -122,28 +56,22 @@ ax(2).XAxis.TickValues = ...
 datetick('x','mmmyy','keeplimits','keepticks')
 ax(2).XGrid = 'on';
 ax(2).GridLineStyle = '--';
-% ax(2).XAxis.MinorTickValuesMode = 'manual';
-% ax(2).XAxis.MinorTickValues = ...
-%     datenum(dateshift(XRange(1), 'start', 'month', ...
-%                       0:calmonths(between(XRange(1),XRange(2)))));
-% ax(2).XAxis.MinorTick = 'on';
-% ax(2).XMinorGrid = 'on';
 
 % ticks and ylabels for each axis
 YTicsChan = 0:400:1600; YLblChan  = {'Position of outlet channel'; ...
-                                     '(m North of river centerline)'};
+                                     '(m north of river centerline)'};
 YTicsWidth = 30:30:150; YLblWidth = {'Lagoon width';
                                      '(m)'};
 YTicsFlow  = 0:200:800; YLblFlow  = {'River flow'; ...
                                      '(m^3/s)'}; % '(m^3\cdots^{-1})';
-YTicsLst   = -1200:600:1800; YLblLst   = {'Longshore transport, Q_s'; ...
-                                          '(m^3/day, positive northwards)'};
+YTicsLst   = -250:250:500; YLblLst   = {'Longshore transport, Q_s'; ...
+                                        '(m^3/day, positive northwards)'};
 YTicsRunup = 1:1:5; YLblRunup = {'Wave runup height, \itR_{high}\rm'; ...
                                  '(daily max, m-LVD)'};
 YTicsLevel = -1:1:3; YLblLevel = {'Water level'; ...
                                   '(daily range, m-LVD)'};
 
-% plot outlet channel position including blindspot
+%% plot outlet channel position including blindspot
 Blindspot = [700, 830];
   
 [ChanH, DataScale, DataOffset] = ...
@@ -165,7 +93,7 @@ text(ax(2), datenum(XRange(1)+days(30)), ...
      'Camera blind spot', 'Color', [0.2,0.3,0.2], ...
      'VerticalAlignment', 'Middle', 'FontSize', 8)
        
-% plot lagoon width
+%% plot lagoon width
 TPlotDates = repmat(datenum(ShortlistPhotos.UniqueTime), [5, 1]);
 T4 = permute(ShortlistPhotos.OffsetOK(:,4,:),[1,3,2]); T4 = T4(:); T4(T4>160)=nan;
 T5 = permute(ShortlistPhotos.OffsetOK(:,5,:),[1,3,2]); T5 = T5(:); T5(T5>160)=nan;
@@ -201,7 +129,7 @@ WidthH{end+1} = patch(ax(3),datenum([XRange(1), XRange(1)+(XRange(2)-XRange(1))*
                       'w', 'EdgeColor', 'none');
 uistack(WidthH{end},'top')
                   
-% plot river flow
+%% plot river flow
 subplot_ts(ax, 3, YTicsFlow ,YLblFlow, 0.95, -1.5,...
            's1', datenum(LagoonTS.DateTime), LagoonTS.Qin, ...
                  'color', [0,0.7,0.9]);
@@ -218,7 +146,7 @@ subplot_ts(ax, 4, YTicsLst ,YLblLst, 1.1, -2.5,...
            's2', datenum(LagoonTS.DateTime), SmoothedLstPotPos, '-b', ...
            's3', datenum(LagoonTS.DateTime), SmoothedLstPotNeg, '-r');
 
-% runup plot
+%% runup plot
 % plot max daily runup
 [RunupH, DataScale, DataOffset] = ...
     subplot_ts(ax, 5, YTicsRunup ,YLblRunup, 0.9, -2.5,...
@@ -241,7 +169,7 @@ text(ax(2), datenum(XRange(1)+days(92)), ...
      'Typical range of barrier crest elevation', 'Color', [0.2,0.3,0.2], ...
      'VerticalAlignment', 'Middle', 'FontSize', 8)
            
-% level plot
+%% level plot
 MSL = mean(LagoonTS.SeaLevel, 'omitnan');
 LightBlue = [47/256, 141/256, 245/256];
 Green = [0,0.5,0];
@@ -270,7 +198,7 @@ LevelH{end+1} = patch(ax(2), ...
                       Green, 'EdgeColor', 'none', 'FaceAlpha', 0.8);
 uistack(LevelH{end},'bottom')
 
-% Legends
+%% Legends
 LegChan = legendflex([ChanH{1},ChanH{2}], ...
                      {'Lagoon end of channel', ...
                       'Sea end of channel'}, ...
@@ -294,7 +222,9 @@ LegLevel = legendflex([LevelH{end-1}, LevelH{end}], ...
                       'xscale', 0.5, 'padding', [1,1,4], ...
                       'anchor', [7,7], 'buffer', [5,5], 'ref', ax(2));
 
-% Add vertical red bands to show key dates and label along top x-axis
+%% Add vertical red bands to show key dates and label along top x-axis
+Alphabet = num2cell('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+DateLabels = Alphabet(1:size(Config.KeyPeriods,1));
 TopAx = axes('XAxisLocation', 'top', 'YTick', [], 'color', 'none', ...
              'Position', [0.07, AxPos(2), 0.86, AxPos(4)], ...
              'FontSize', 9, 'TickDir', 'out', ...
@@ -304,10 +234,6 @@ TopAx = axes('XAxisLocation', 'top', 'YTick', [], 'color', 'none', ...
              'XTickLabels', DateLabels, ...
              'XColor','r', ...
              'TickLength', [0,0]);
-%              'GridLineStyle','--', ...
-%              'GridColor','r', ...
-%              'GridAlpha', 0.5, ...
-%              'XGrid', 'on');
 for DateNo = 1:size(Config.KeyPeriods,1)
     hold on
     patch(TopAx,datenum(Config.KeyPeriods(DateNo,[1,2,2,1])),[1,1,0,0],'r', ...
@@ -315,11 +241,11 @@ for DateNo = 1:size(Config.KeyPeriods,1)
 end
 uistack(TopAx,'bottom')
 
-% Save figure
+%% Save figure
 export_fig('outputs\ConcurrentTimeseries', '-png', '-r450')
 % export_fig('outputs\ConcurrentTimeseries', '-eps')
 
-% Tidy up
+%% Tidy up
 clear YTicsChan YTicsWidth YTicsFlow YTicsLst PlotDates T5 T6 T7 T8 ...
     FigPos ChanSpacing range rangeFill scale LegChan ...
     LegWidth WidthH ChanH YLblChan YLblWidth YLblFlow YLblLst ...
