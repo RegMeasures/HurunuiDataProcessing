@@ -5,7 +5,7 @@ function animatePhotos(VideoName, ...
 %   
 %   ANIMATEPHOTOS(VideoName, ...
 %                 PhotoFolder, PhotoDatabase, TimeMatchedPhotos, ...
-%                 LagoonTs, WaveTs, ChannelTs, Framerate)
+%                 Config, LagoonTs, Framerate, DateOnly)
 %
 %   Inputs:
 %       VideoName   = filename of video output
@@ -17,7 +17,7 @@ function animatePhotos(VideoName, ...
 %       Config      = Configuration inputs from HurunuiAnalysisConfig
 %       LagoonTs    = Lagoon timeseries data 
 %                     (optional, if not supplied no data is plotted, if 
-%                     supplied but no wave or channel data then only level 
+%                     supplied but no wave or LST data then only level 
 %                     and flow are plotted)
 %       Framerate   = frames per second for outupt video 
 %                     (optional, default=10)
@@ -109,41 +109,59 @@ end
 
 %% generate level plot ready to insert into movie
 if PlotLevel
-    if PlotLST || ~PlotWave
+    if ~PlotLST || ~PlotQin
         LevelFig.FigureH = figure('Position',absolutePixelPos([100, 400, 648, 200]),...
                                   'Name','Lagoon level');
     else
-        % if we're not plotting channel data then make level plot bigger
+        % if we're plotting LST and flow data then make level plot bigger
         LevelFig.FigureH = figure('Position',absolutePixelPos([100, 400, 648, 400]),...
                                   'Name','Lagoon level');
     end
-    LevelFig.LineH = plot(LagoonTs.DateTime, LagoonTs.WL, 'b-');
+    LevelFig.LineH = area(LagoonTs.DateTime, LagoonTs.WL, -1, ...
+                          'FaceColor', 'blue');
     LevelFig.AxesH = gca;
     hold on
-%     LevelFig.PointH = plot(LevelFig.AxesH, LagoonTs.DateTime(end), ...
-%                            LagoonTs.WL(end), 'b.', 'MarkerSize',15);
-    LevelFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[-1.0,3.5],'k-');
+    ylim([0.5,3.5])
+    ylabel('Water level (m)')
+    LevLegText = {'Lagoon level'};
+    LevLegObj = [LevelFig.LineH];
                        
     if PlotTide
         % Add in tide plot
-        LevelFig.TideLineH = plot(LevelFig.AxesH, LagoonTs.DateTime, ...
-                                  LagoonTs.SeaLevel, 'c-');
-%         LevelFig.TidePointH = plot(LevelFig.AxesH, LagoonTs.DateTime(end), ...
-%                                    LagoonTs.SeaLevel(end), 'c.', 'MarkerSize',15);
-        ylabel('Water level (m)')
+        LevelFig.TideLineH = area(LevelFig.AxesH, LagoonTs.DateTime, ...
+                                  LagoonTs.SeaLevel, -1, ...
+                                  'FaceColor', [47/256, 141/256, 245/256]);
+        LevLegText{end+1} = 'Sea level';
+        LevLegObj(end+1) = [LevelFig.TideLineH];
         ylim([-1.0,3.5])
-        legend([LevelFig.LineH,LevelFig.TideLineH], ...
-               {'Lagoon level','SeaLevel'}, ...
-               'Location', 'NorthWest')
-        Pos = get(LevelFig.AxesH, 'Position');
-        set(LevelFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
-    else
-        ylabel('Lagoon level [m]')
-        ylim([0.5,3.5])
-        Pos = get(LevelFig.AxesH, 'Position');
-        set(LevelFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
     end
-    
+    if PlotWave
+        LevelFig.WaveLineH = area(LevelFig.AxesH, LagoonTs.DateTime, ...
+                                  LagoonTs.R_high2, -1, ...
+                                  'LineStyle', 'none', 'FaceColor', 'red');
+        LevLegText{end+1} = 'Max wave runup';
+        LevLegObj(end+1) = [LevelFig.WaveLineH];
+        ylim([-1.0,5])
+        LevelFig.PatchH = fill([LagoonTs.DateTime(1), LagoonTs.DateTime(end), ...
+                                LagoonTs.DateTime(end), LagoonTs.DateTime(1)], ...
+                               [Config.CrestHeight(1), Config.CrestHeight(1), ...
+                                Config.CrestHeight(2), Config.CrestHeight(2)], ...
+                               [0.9,0.9,0.9], ...
+                               'EdgeColor', 'none');
+        LevelFig.PatchH2 = fill([LagoonTs.DateTime(1), LagoonTs.DateTime(end), ...
+                                 LagoonTs.DateTime(end), LagoonTs.DateTime(1)], ...
+                                [Config.CrestHeight(2), Config.CrestHeight(2), ...
+                                 Config.CrestHeight(2)+0.5, Config.CrestHeight(2)+0.5], ...
+                                [0.95,0.95,0.95], ...
+                                'EdgeColor', 'none'); 
+        uistack(LevelFig.WaveLineH, 'bottom')
+        uistack(LevelFig.PatchH, 'bottom')
+        uistack(LevelFig.PatchH2, 'bottom')
+    end
+    LevelFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[-1.0,5],'k-');
+    legend(LevLegObj, LevLegText, 'Location', 'NorthWest')
+    Pos = get(LevelFig.AxesH, 'Position');
+    set(LevelFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
     hold off
 else
     if PlotLST || ~PlotWave
@@ -151,47 +169,6 @@ else
     else
         LevelPlot.cdata = 255 * ones(400, 648, 3, 'int8');
     end
-end
-
-%% generate wave runup plot ready to insert into movie
-if PlotWave
-    
-    % Smooth wave data for plotting using simple 3 point moving average
-    LagoonTs.WaveHsSmooth = ...
-        ([LagoonTs.WaveHs(1);LagoonTs.WaveHs(1:end-1)] + ...
-         LagoonTs.WaveHs + ...
-         [LagoonTs.WaveHs(2:end);LagoonTs.WaveHs(end);]) / 3;
-    
-    WaveFig.FigureH = figure('Position',absolutePixelPos([100, 700, 648, 200]),...
-                             'Name','Runup height (m)');
-    WaveFig.LineH = plot(LagoonTs.DateTime, LagoonTs.R_high2, 'b-');
-    hold on
-    WaveFig.PatchH = fill([LagoonTs.DateTime(1), LagoonTs.DateTime(end), ...
-                           LagoonTs.DateTime(end), LagoonTs.DateTime(1)], ...
-                          [Config.CrestHeight(1), Config.CrestHeight(1), ...
-                           Config.CrestHeight(2), Config.CrestHeight(2)], ...
-                          [0.9,0.9,0.9], ...
-                          'EdgeColor', 'none');
-    WaveFig.PatchH2 = fill([LagoonTs.DateTime(1), LagoonTs.DateTime(end), ...
-                            LagoonTs.DateTime(end), LagoonTs.DateTime(1)], ...
-                           [Config.CrestHeight(2), Config.CrestHeight(2), ...
-                            Config.CrestHeight(2)+0.5, Config.CrestHeight(2)+0.5], ...
-                           [0.95,0.95,0.95], ...
-                           'EdgeColor', 'none');                   
-    uistack(WaveFig.PatchH, 'bottom')
-    uistack(WaveFig.PatchH2, 'bottom')
-    WaveFig.AxesH = gca;
-    hold on
-    % WaveFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.WaveHs(end), 'r.', 'MarkerSize',15);
-    WaveFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[0,5],'k-');
-    hold off
-    ylabel('Wave runup height (m)')
-    ylim([0,5])
-    Pos = get(WaveFig.AxesH, 'Position');
-    set(WaveFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
-    set(WaveFig.AxesH, 'Layer','top')
-else
-    WavePlot.cdata = 255 * ones(200, 648, 3, 'int8');
 end
 
 %% generate LST plot ready to insert into movie
@@ -202,14 +179,18 @@ if PlotLST
     LstNeg(LstNeg>0) = nan;
     LSTFig.FigureH = figure('Position',absolutePixelPos([100, 400, 648, 200]),...
                             'Name','LST');
-    LSTFig.LineH = plot(LagoonTs.DateTime, LagoonTs.LST*60*60, 'k-');
+    LSTFig.AxisLineH = plot([LagoonTs.DateTime(1), LagoonTs.DateTime(end)], ...
+                            [0,0], 'Color', [0.7,0.7,0.7]);
     LSTFig.AxesH = gca;
     hold on
-    LSTFig.PosLineH = plot(LagoonTs.DateTime, LstPos*60*60, 'b-');
-    LSTFig.NegLineH = plot(LagoonTs.DateTime, LstNeg*60*60, 'r-');
-    LSTFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[-15,20],'k-');
-    LSTFig.AxisLineH = plot([LagoonTs.DateTime(1), LagoonTs.DateTime(end)], ...
-                            [0,0], 'Color', [0.9,0.9,0.9]);
+    LSTFig.LineH = plot(LSTFig.AxesH, LagoonTs.DateTime, ...
+                        LagoonTs.LST*60*60, 'k-');
+    LSTFig.PosLineH = plot(LSTFig.AxesH, LagoonTs.DateTime, ...
+                           LstPos*60*60, 'b-');
+    LSTFig.NegLineH = plot(LSTFig.AxesH, LagoonTs.DateTime, ...
+                           LstNeg*60*60, 'r-');
+    LSTFig.TimeLineH = plot(LSTFig.AxesH, LagoonTs.DateTime([1,1]), ...
+                            [-15,20],'k-');
     hold off
     ylabel('Longshore transport (m^3/hr)')
     ylim([-15,20])
@@ -276,103 +257,48 @@ for TimeNo = 1:1:NoOfFrames
         xlim(FlowFig.AxesH, ...
              TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
         datetick(FlowFig.AxesH,'x','ddmmm','keeplimits')
-        CurrentQin = interp1(LagoonTs.DateTime, LagoonTs.Qin, ...
-                             TimeMatchedPhotos.UniqueTime(TimeNo));
-%         set(FlowFig.PointH, ...
-%             'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
-%             'YData', CurrentQin)
         if PlotQout
-            CurrentQout = interp1(LagoonTs.DateTime, LagoonTs.Qout, ...
-                                  TimeMatchedPhotos.UniqueTime(TimeNo));
-%             set(FlowFig.QoutPointH, ...
-%                 'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
-%                 'YData', CurrentQout)
             set(FlowFig.TimeLineH, ...
                 'XData', TimeMatchedPhotos.UniqueTime([TimeNo,TimeNo]));
-%             set(FlowFig.LabelH, ...
-%                 'String', sprintf('= %0.0f m^3/s\n= %0.0f m^3/s', ...
-%                                   CurrentQin, CurrentQout))
-        else
-%             set(FlowFig.LabelH, ...
-%                 'String', sprintf('River flow = %0.0f m^3/s', CurrentQin))
         end
-        
         FlowPlot = getframe(FlowFig.FigureH);
     end
 
     % prep level plot
     if PlotLevel
-        if verLessThan('Matlab','9.1')
-            xlim(LevelFig.AxesH, ...
-                 datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
-        else
-            xlim(LevelFig.AxesH, ...
-                 TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
-        end
+        xlim(LevelFig.AxesH, ...
+             TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
         datetick(LevelFig.AxesH,'x','ddmmm','keeplimits')
-        CurrentWL = interp1(LagoonTs.DateTime, LagoonTs.WL, ...
-                            TimeMatchedPhotos.UniqueTime(TimeNo));
-%         set(LevelFig.PointH, ...
-%             'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
-%             'YData', CurrentWL)
         set(LevelFig.TimeLineH, ...
             'XData', TimeMatchedPhotos.UniqueTime([TimeNo,TimeNo]));
-        if PlotTide
-            CurrentTide = interp1(LagoonTs.DateTime, LagoonTs.SeaLevel, ...
-                                  TimeMatchedPhotos.UniqueTime(TimeNo));
-%             set(LevelFig.TidePointH, ...
-%                 'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
-%                 'YData', CurrentTide)
-        end
         LevelPlot = getframe(LevelFig.FigureH);
     end
 
-    % prep significant wave height plot
-    if PlotWave
-        CurrentHs = interp1(LagoonTs.DateTime, LagoonTs.WaveHs, ...
-                            TimeMatchedPhotos.UniqueTime(TimeNo));
-        xlim(WaveFig.AxesH, ...
-             TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
-        datetick(WaveFig.AxesH,'x','ddmmm','keeplimits')
-%         set(WaveFig.PointH, ...
-%             'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
-%             'YData', CurrentHs)
-        set(WaveFig.TimeLineH, ...
-            'XData', TimeMatchedPhotos.UniqueTime([TimeNo,TimeNo]));
-        WavePlot = getframe(WaveFig.FigureH);
-    end
-
-    % prep channel plot
+    % prep LST plot
     if PlotLST
-        CurrentChannelLength = interp1(LagoonTs.DateTime, LagoonTs.LST*60*60, ...
-                                       TimeMatchedPhotos.UniqueTime(TimeNo));
         xlim(LSTFig.AxesH, ...
              TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
         datetick(LSTFig.AxesH,'x','ddmmm','keeplimits')
-%         set(ChannelFig.PointH, ...
-%             'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
-%             'YData', CurrentChannelLength)
         set(LSTFig.TimeLineH, ...
             'XData', TimeMatchedPhotos.UniqueTime([TimeNo,TimeNo]));
-        ChannelPlot = getframe(LSTFig.FigureH);
+        LSTPlot = getframe(LSTFig.FigureH);
     end
 
     % insert plots into frame
-    if PlotQin || PlotLevel
-        if PlotLST
+    if PlotQin && PlotLST
+        if PlotLevel
             frame = [frame; ...
-                     FlowPlot.cdata, LevelPlot.cdata; ...
-                     WavePlot.cdata, ChannelPlot.cdata];
-        elseif PlotWave && ~PlotLST
+                     [FlowPlot.cdata; LSTPlot.cdata], LevelPlot.cdata];
+        else
             frame = [frame; ...
-                     [FlowPlot.cdata; WavePlot.cdata], LevelPlot.cdata];
-        elseif ~PlotWave && ~PlotLST
-            frame = [frame; ...
-                     FlowPlot.cdata, LevelPlot.cdata];
+                     FlowPlot.cdata, LSTPlot.cdata];
         end
-    elseif PlotWave || PlotLST
+    elseif PlotQin
         frame = [frame; ...
-                 WavePlot.cdata, ChannelPlot.cdata];
+                 FlowPlot.cdata, LevelPlot.cdata];
+    elseif PlotLST || PlotLevel
+        frame = [frame; ...
+                 LSTPlot.cdata, LevelPlot.cdata];
     end
 
     % write out the frame
@@ -388,9 +314,6 @@ if PlotLevel
 end
 if PlotQin
     close(FlowFig.FigureH)
-end
-if PlotWave
-    close(WaveFig.FigureH)
 end
 if PlotLST
     close(LSTFig.FigureH)

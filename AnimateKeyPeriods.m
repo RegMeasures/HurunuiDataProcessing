@@ -28,7 +28,7 @@ if ~exist(OutputFolder,'dir')
     mkdir(OutputFolder);
 end
 
-for PeriodNo = 1%:size(Config.KeyPeriods,1)
+for PeriodNo = 1:size(Config.KeyPeriods,1)
     fprintf('Producing video for period %s\n', Alphabet{PeriodNo})
     
     PhotoSelectMask = ShortlistPhotos.UniqueTime >= Config.KeyPeriods(PeriodNo,1) & ...
