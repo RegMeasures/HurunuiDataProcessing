@@ -1,6 +1,6 @@
 function animatePhotos(VideoName, ...
                        PhotoFolder, PhotoDatabase, TimeMatchedPhotos, ...
-                       LagoonTs, Framerate, DateOnly)
+                       Config, LagoonTs, Framerate, DateOnly)
 % ANIMATEPHOTOS   record timelapse movie of both cams + TS data plots
 %   
 %   ANIMATEPHOTOS(VideoName, ...
@@ -14,6 +14,7 @@ function animatePhotos(VideoName, ...
 %                     PhotoFolder (see genPhotoDatabase and photoQuality)
 %       TimeMatchedPhotos = Table refencing photos associated with each
 %                     timestep of video (see timeMatchPhotos)
+%       Config      = Configuration inputs from HurunuiAnalysisConfig
 %       LagoonTs    = Lagoon timeseries data 
 %                     (optional, if not supplied no data is plotted, if 
 %                     supplied but no wave or channel data then only level 
@@ -27,7 +28,8 @@ function animatePhotos(VideoName, ...
 %     - Size locked for 1944x2592 but shouldn't be a problems as
 %       this is the camera high res size
 %
-%   See also: GENPHOTODATABASE, PHOTOQUALITY, TIMEMATCHPHOTOS
+%   See also: GENPHOTODATABASE, PHOTOQUALITY, TIMEMATCHPHOTOS, 
+%             HURUNUIANALYSISCONFIG
 
 
 %% Set defaults and plot options
@@ -36,7 +38,7 @@ PlotTide = false;
 PlotQin = false;
 PlotQout = false;
 PlotWave = false;
-PlotChannel = false;
+PlotLST = false;
 if exist('LagoonTs','var') || isempty(LagoonTs)
     PlotLevel = true;
     PlotQin = true;
@@ -46,11 +48,11 @@ if exist('LagoonTs','var') || isempty(LagoonTs)
     if ismember('SeaLevel', LagoonTs.Properties.VariableNames)
         PlotTide = true;
     end
-    if ismember('WaveHs', LagoonTs.Properties.VariableNames)
+    if ismember('R_high2', LagoonTs.Properties.VariableNames)
         PlotWave = true;
     end
-    if ismember('ChannelL', LagoonTs.Properties.VariableNames)
-        PlotChannel = true;
+    if ismember('LST', LagoonTs.Properties.VariableNames)
+        PlotLST = true;
     end
 end
 
@@ -97,7 +99,7 @@ if PlotQin
 %                               'FontSize', 9);
     end
     hold off
-    ylabel('Flow rate [m^3/s]')
+    ylabel('Flow (m^3/s)')
     ylim([0,200])
     Pos = get(FlowFig.AxesH, 'Position');
     set(FlowFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
@@ -107,7 +109,7 @@ end
 
 %% generate level plot ready to insert into movie
 if PlotLevel
-    if PlotChannel || ~PlotWave
+    if PlotLST || ~PlotWave
         LevelFig.FigureH = figure('Position',absolutePixelPos([100, 400, 648, 200]),...
                                   'Name','Lagoon level');
     else
@@ -128,7 +130,7 @@ if PlotLevel
                                   LagoonTs.SeaLevel, 'c-');
 %         LevelFig.TidePointH = plot(LevelFig.AxesH, LagoonTs.DateTime(end), ...
 %                                    LagoonTs.SeaLevel(end), 'c.', 'MarkerSize',15);
-        ylabel('Water level [m]')
+        ylabel('Water level (m)')
         ylim([-1.0,3.5])
         legend([LevelFig.LineH,LevelFig.TideLineH], ...
                {'Lagoon level','SeaLevel'}, ...
@@ -144,14 +146,14 @@ if PlotLevel
     
     hold off
 else
-    if PlotChannel || ~PlotWave
+    if PlotLST || ~PlotWave
         LevelPlot.cdata = 255 * ones(200, 648, 3, 'int8');
     else
         LevelPlot.cdata = 255 * ones(400, 648, 3, 'int8');
     end
 end
 
-%% generate wave height plot ready to insert into movie
+%% generate wave runup plot ready to insert into movie
 if PlotWave
     
     % Smooth wave data for plotting using simple 3 point moving average
@@ -161,35 +163,58 @@ if PlotWave
          [LagoonTs.WaveHs(2:end);LagoonTs.WaveHs(end);]) / 3;
     
     WaveFig.FigureH = figure('Position',absolutePixelPos([100, 700, 648, 200]),...
-                             'Name','Significant wave height');
-    WaveFig.LineH = plot(LagoonTs.DateTime, LagoonTs.WaveHs, 'b-');
+                             'Name','Runup height (m)');
+    WaveFig.LineH = plot(LagoonTs.DateTime, LagoonTs.R_high2, 'b-');
+    hold on
+    WaveFig.PatchH = fill([LagoonTs.DateTime(1), LagoonTs.DateTime(end), ...
+                           LagoonTs.DateTime(end), LagoonTs.DateTime(1)], ...
+                          [Config.CrestHeight(1), Config.CrestHeight(1), ...
+                           Config.CrestHeight(2), Config.CrestHeight(2)], ...
+                          [0.9,0.9,0.9], ...
+                          'EdgeColor', 'none');
+    WaveFig.PatchH2 = fill([LagoonTs.DateTime(1), LagoonTs.DateTime(end), ...
+                            LagoonTs.DateTime(end), LagoonTs.DateTime(1)], ...
+                           [Config.CrestHeight(2), Config.CrestHeight(2), ...
+                            Config.CrestHeight(2)+0.5, Config.CrestHeight(2)+0.5], ...
+                           [0.95,0.95,0.95], ...
+                           'EdgeColor', 'none');                   
+    uistack(WaveFig.PatchH, 'bottom')
+    uistack(WaveFig.PatchH2, 'bottom')
     WaveFig.AxesH = gca;
     hold on
     % WaveFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.WaveHs(end), 'r.', 'MarkerSize',15);
-    WaveFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[0,6],'k-');
+    WaveFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[0,5],'k-');
     hold off
-    ylabel('Sig. wave height [m]')
-    ylim([0,4])
+    ylabel('Wave runup height (m)')
+    ylim([0,5])
     Pos = get(WaveFig.AxesH, 'Position');
     set(WaveFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
+    set(WaveFig.AxesH, 'Layer','top')
 else
     WavePlot.cdata = 255 * ones(200, 648, 3, 'int8');
 end
 
-%% generate channel plot ready to insert into movie
-if PlotChannel
-    ChannelFig.FigureH = figure('Position',absolutePixelPos([100, 400, 648, 200]),...
-                                'Name','Outlet Channel');
-    ChannelFig.LineH = plot(LagoonTs.DateTime, LagoonTs.ChannelL, 'b-');
-    ChannelFig.AxesH = gca;
+%% generate LST plot ready to insert into movie
+if PlotLST
+    LstPos = LagoonTs.LST;
+    LstNeg = LagoonTs.LST;
+    LstPos(LstPos<0) = nan;
+    LstNeg(LstNeg>0) = nan;
+    LSTFig.FigureH = figure('Position',absolutePixelPos([100, 400, 648, 200]),...
+                            'Name','LST');
+    LSTFig.LineH = plot(LagoonTs.DateTime, LagoonTs.LST*60*60, 'k-');
+    LSTFig.AxesH = gca;
     hold on
-    % ChannelFig.PointH = plot(LagoonTs.DateTime(end), LagoonTs.ChannelL(end), 'r.', 'MarkerSize',15);
-    ChannelFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[0,500],'k-');
+    LSTFig.PosLineH = plot(LagoonTs.DateTime, LstPos*60*60, 'b-');
+    LSTFig.NegLineH = plot(LagoonTs.DateTime, LstNeg*60*60, 'r-');
+    LSTFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[-15,20],'k-');
+    LSTFig.AxisLineH = plot([LagoonTs.DateTime(1), LagoonTs.DateTime(end)], ...
+                            [0,0], 'Color', [0.9,0.9,0.9]);
     hold off
-    ylabel('Outlet channel length [m]')
-    ylim([0,500])
-    Pos = get(ChannelFig.AxesH, 'Position');
-    set(ChannelFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
+    ylabel('Longshore transport (m^3/hr)')
+    ylim([-15,20])
+    Pos = get(LSTFig.AxesH, 'Position');
+    set(LSTFig.AxesH, 'Position', [0.1, Pos(2), 0.87, Pos(4)])
 end
 
 %% Loop through timesteps and write video
@@ -248,13 +273,8 @@ for TimeNo = 1:1:NoOfFrames
 
     % prep flow plot
     if PlotQin
-        if verLessThan('Matlab','9.1')
-            xlim(FlowFig.AxesH, ...
-                 datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
-        else
-            xlim(FlowFig.AxesH, ...
-                 TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
-        end
+        xlim(FlowFig.AxesH, ...
+             TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
         datetick(FlowFig.AxesH,'x','ddmmm','keeplimits')
         CurrentQin = interp1(LagoonTs.DateTime, LagoonTs.Qin, ...
                              TimeMatchedPhotos.UniqueTime(TimeNo));
@@ -311,13 +331,8 @@ for TimeNo = 1:1:NoOfFrames
     if PlotWave
         CurrentHs = interp1(LagoonTs.DateTime, LagoonTs.WaveHs, ...
                             TimeMatchedPhotos.UniqueTime(TimeNo));
-        if verLessThan('Matlab','9.1')
-            xlim(WaveFig.AxesH, ...
-                 datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
-        else
-            xlim(WaveFig.AxesH, ...
-                 TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
-        end
+        xlim(WaveFig.AxesH, ...
+             TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
         datetick(WaveFig.AxesH,'x','ddmmm','keeplimits')
 %         set(WaveFig.PointH, ...
 %             'XData', TimeMatchedPhotos.UniqueTime(TimeNo), ...
@@ -328,39 +343,34 @@ for TimeNo = 1:1:NoOfFrames
     end
 
     % prep channel plot
-    if PlotChannel
-        CurrentChannelLength = interp1(LagoonTs.DateTime, LagoonTs.ChannelL, ...
+    if PlotLST
+        CurrentChannelLength = interp1(LagoonTs.DateTime, LagoonTs.LST*60*60, ...
                                        TimeMatchedPhotos.UniqueTime(TimeNo));
-        if verLessThan('Matlab','9.1')
-            xlim(ChannelFig.AxesH, ...
-                 datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
-        else
-            xlim(ChannelFig.AxesH, ...
-                 datenum(TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)]))
-        end
-        datetick(ChannelFig.AxesH,'x','ddmmm','keeplimits')
+        xlim(LSTFig.AxesH, ...
+             TimeMatchedPhotos.UniqueTime(TimeNo) + [-days(21),days(7)])
+        datetick(LSTFig.AxesH,'x','ddmmm','keeplimits')
 %         set(ChannelFig.PointH, ...
 %             'XData', datenum(TimeMatchedPhotos.UniqueTime(TimeNo)), ...
 %             'YData', CurrentChannelLength)
-        set(ChannelFig.TimeLineH, ...
+        set(LSTFig.TimeLineH, ...
             'XData', TimeMatchedPhotos.UniqueTime([TimeNo,TimeNo]));
-        ChannelPlot = getframe(ChannelFig.FigureH);
+        ChannelPlot = getframe(LSTFig.FigureH);
     end
 
     % insert plots into frame
     if PlotQin || PlotLevel
-        if PlotChannel
+        if PlotLST
             frame = [frame; ...
                      FlowPlot.cdata, LevelPlot.cdata; ...
                      WavePlot.cdata, ChannelPlot.cdata];
-        elseif PlotWave && ~PlotChannel
+        elseif PlotWave && ~PlotLST
             frame = [frame; ...
                      [FlowPlot.cdata; WavePlot.cdata], LevelPlot.cdata];
-        elseif ~PlotWave && ~PlotChannel
+        elseif ~PlotWave && ~PlotLST
             frame = [frame; ...
                      FlowPlot.cdata, LevelPlot.cdata];
         end
-    elseif PlotWave || PlotChannel
+    elseif PlotWave || PlotLST
         frame = [frame; ...
                  WavePlot.cdata, ChannelPlot.cdata];
     end
@@ -382,7 +392,7 @@ end
 if PlotWave
     close(WaveFig.FigureH)
 end
-if PlotChannel
-    close(ChannelFig.FigureH)
+if PlotLST
+    close(LSTFig.FigureH)
 end
 
