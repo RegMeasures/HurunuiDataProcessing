@@ -43,7 +43,7 @@ if exist('LagoonTs','var') || isempty(LagoonTs)
     PlotLevel = true;
     PlotQin = true;
     if ismember('Qout', LagoonTs.Properties.VariableNames)
-        PlotQout = true;
+        %PlotQout = true;
     end
     if ismember('SeaLevel', LagoonTs.Properties.VariableNames)
         PlotTide = true;
@@ -148,15 +148,8 @@ if PlotLevel
                                 Config.CrestHeight(2), Config.CrestHeight(2)], ...
                                [0.9,0.9,0.9], ...
                                'EdgeColor', 'none');
-        LevelFig.PatchH2 = fill([LagoonTs.DateTime(1), LagoonTs.DateTime(end), ...
-                                 LagoonTs.DateTime(end), LagoonTs.DateTime(1)], ...
-                                [Config.CrestHeight(2), Config.CrestHeight(2), ...
-                                 Config.CrestHeight(2)+0.5, Config.CrestHeight(2)+0.5], ...
-                                [0.95,0.95,0.95], ...
-                                'EdgeColor', 'none'); 
         uistack(LevelFig.WaveLineH, 'bottom')
         uistack(LevelFig.PatchH, 'bottom')
-        uistack(LevelFig.PatchH2, 'bottom')
     end
     LevelFig.TimeLineH = plot(LagoonTs.DateTime([1,1]),[-1.0,5],'k-');
     legend(LevLegObj, LevLegText, 'Location', 'NorthWest')
@@ -205,7 +198,7 @@ writerObj = VideoWriter(VideoName,'MPEG-4');
 
 % set relevant properties
 writerObj.FrameRate = Framerate;
-writerObj.Quality = 85;
+writerObj.Quality = 70;
 
 % open ready for writing to
 open(writerObj);
