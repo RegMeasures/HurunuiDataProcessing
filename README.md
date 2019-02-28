@@ -12,7 +12,7 @@ Data used in this analysis of the Hurunui Hapua includes:
 - **Water level recorder:** A telemetered lagoon water level recorder is sited in the center of the lagoon directly below the cameras.
 - **River flow gauge:** [Environment Canterbury](https://www.ecan.govt.nz/) maintain a flow recorder 20km upstream from the coast at the SH1 bridge over the the Hurunui River ([Station 65101](https://sims.niwa.co.nz/sims/station.do?locationId=1029)). The data is available for download at https://www.ecan.govt.nz/data/riverflow/sitedetails/65101.
 - **Wave buoy:** A wave buoy 100 kms to the south of the hapua monitors the deep water wave climate. It is maintained by [NIWA](https://www.niwa.co.nz) and partially funded by [Environment Canterbury](https://www.ecan.govt.nz/). Real time data is visible at https://www.ecan.govt.nz/data/current-wave-data/.
-- **Sea level:** Sea level monitoring is conducted by [NIWA](https://www.niwa.co.nz) at Sumner ([Station 66699](https://sims.niwa.co.nz/sims/station.do?locationId=1127). Real time data is visible at https://www.niwa.co.nz/our-science/coasts/tools-and-resources/sea-levels/sumner-head.
+- **Sea level:** Sea level monitoring is conducted by [NIWA](https://www.niwa.co.nz) at Sumner ([Station 66699](https://sims.niwa.co.nz/sims/station.do?locationId=1127)). Real time data is visible at https://www.niwa.co.nz/our-science/coasts/tools-and-resources/sea-levels/sumner-head.
 
 ## Matlab analysis (this repository)
 The most important analysis scripts are:
@@ -49,7 +49,7 @@ The wind_rose function for producing wind rose plots is available on Matlab File
 ## Acknowledgements
 [NIWA](https://www.niwa.co.nz) has funded this research through the [Sustainable water Allocation Programme](https://www.niwa.co.nz/freshwater-and-estuaries/programme-overview/sustainable-water-allocation).
 
-This code has been developed as part of Richard Measures' part time PhD research in the [Hydrological and Ecological Engineering research group at the University of Canterbury Department of Civil and Natural Resources Engineering](http://www.civil.canterbury.ac.nz/hydroeco/abouthydro.shtml). Richard's PhD supervisors are [Tom Cochrane](http://www.canterbury.ac.nz/engineering/schools/cnre/contact-us/academic-staff/tom-cochrane.html), [Deirdre Hart](http://www.canterbury.ac.nz/science/schools-and-departments/geog/contact-us/academic-staff/deirdre-hart.html) and [Murray Hicks](https://www.niwa.co.nz/people/murray-hicks).
+This code has been developed as part of Richard Measures' part time PhD research in the [Hydrological and Ecological Engineering research group at the University of Canterbury Department of Civil and Natural Resources Engineering](http://www.civil.canterbury.ac.nz/hydroeco/abouthydro.shtml). Richard's PhD supervisors are [Tom Cochrane](http://www.canterbury.ac.nz/engineering/schools/cnre/contact-us/academic-staff/tom-cochrane.html), [Deirdre Hart](https://www.canterbury.ac.nz/science/contact-us/people/deirdre-hart.html) and [Murray Hicks](https://www.niwa.co.nz/people/murray-hicks).
 
 ## References
 Pawlowicz, R., Beardsley, B., Lentz, S., 2002. Classical tidal harmonic analysis including error estimates in MATLAB using T_TIDE. Comput. Geosci. 28, 929–937. doi:10.1016/S0098-3004(02)00013-4. http://www.sciencedirect.com/science/article/pii/S0098300402000134  
