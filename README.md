@@ -9,9 +9,10 @@ The Hurunui River drains a catchment of 2669 km<sup>2</sup>, from the main divid
 ## Monitoring data
 Data used in this analysis of the Hurunui Hapua includes:
 - **Timelapse cameras:** Two timelapse cameras are mounted on an 8 m utility pole in the centre of the lagoon backshore. One camera points towards the north-east end of the lagoon and one towards the south-west. The cameras record colour images every 15 minutes during daylight hours.
-- **Water level recorder:** A telemetered lagoon water level recorder is sited in the center of the lagoon directly below the cameras.
+- **Water level recorder:** A telemetered lagoon water level recorder is sited in the center of the lagoon directly below the cameras. The QA'd water level data is stored in NIWA's Aquarius hydrometric database and can be accessed using web services.
 - **River flow gauge:** [Environment Canterbury](https://www.ecan.govt.nz/) maintain a flow recorder 20km upstream from the coast at the SH1 bridge over the the Hurunui River ([Station 65101](https://sims.niwa.co.nz/sims/station.do?locationId=1029)). The data is available for download at https://www.ecan.govt.nz/data/riverflow/sitedetails/65101.
 - **Wave buoy:** A wave buoy 100 kms to the south of the hapua monitors the deep water wave climate. It is maintained by [NIWA](https://www.niwa.co.nz) and partially funded by [Environment Canterbury](https://www.ecan.govt.nz/). Real time data is visible at https://www.ecan.govt.nz/data/current-wave-data/.
+- **Wave hindcast:** Data from hindcast wave modelling carried out by Richard Gorman and described in Hicks et al. (2018) was used to provide wave data at the open coast outside the river mouth.
 - **Sea level:** Sea level monitoring is conducted by [NIWA](https://www.niwa.co.nz) at Sumner ([Station 66699](https://sims.niwa.co.nz/sims/station.do?locationId=1127)). Real time data is visible at https://www.niwa.co.nz/our-science/coasts/tools-and-resources/sea-levels/sumner-head.
 
 ## Matlab analysis (this repository)
@@ -52,5 +53,7 @@ The wind_rose function for producing wind rose plots is available on Matlab File
 This code has been developed as part of Richard Measures' part time PhD research in the [Hydrological and Ecological Engineering research group at the University of Canterbury Department of Civil and Natural Resources Engineering](http://www.civil.canterbury.ac.nz/hydroeco/abouthydro.shtml). Richard's PhD supervisors are [Tom Cochrane](http://www.canterbury.ac.nz/engineering/schools/cnre/contact-us/academic-staff/tom-cochrane.html), [Deirdre Hart](https://www.canterbury.ac.nz/science/contact-us/people/deirdre-hart.html) and [Murray Hicks](https://www.niwa.co.nz/people/murray-hicks).
 
 ## References
+Hicks, D.M., Gorman, R.M., Measures, R.J., Walsh, J.M., Bosserelle, C., 2018. Coastal sand budget for Southern Pegasus Bay: Stage A, NIWA Client Report 2018062CH for Christchurch City Council.
+
 Pawlowicz, R., Beardsley, B., Lentz, S., 2002. Classical tidal harmonic analysis including error estimates in MATLAB using T_TIDE. Comput. Geosci. 28, 929–937. doi:10.1016/S0098-3004(02)00013-4. http://www.sciencedirect.com/science/article/pii/S0098300402000134  
 
