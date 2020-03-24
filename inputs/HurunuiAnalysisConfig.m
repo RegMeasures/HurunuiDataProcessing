@@ -21,7 +21,7 @@ Config.LagoonWLDataId = 'HG.Master';
 Config.AquariusHostURL = 'aquarius.niwa.co.nz';
 
 % Lagoon hypsometry
-Config.HypsometryFile = '\TimeseriesData\LagoonHypsometry.xlsx';
+Config.HypsometryFile = '\TimeseriesData\LagoonHypsometry2.xlsx';
 
 % Sumner sea level
 Config.SumnerFile = '\TimeseriesData\SumnerSeaLevel.csv';
@@ -131,15 +131,15 @@ Config.VoidRatio = 0.4; % Proportion of volume taken up by voids in beach sedime
 
 %% Key periods for outputs
 
-Config.KeyPeriods = {'12Oct2015','01Nov2015'; ... % Well connected lagoon - short outlet channel
-                     '05Nov2015','29Nov2015'; ... % Perched lagoon with extended outlet - at end of period small seaward truncation of outlet channel
-                     '12May2016','15May2016'; ... % Outlet channel migration widening lagoon
-                     '13Jul2016','15Jul2016'; ... % Lagoon flood due to small river flood when already perched
-                     '18Nov2016','20Nov2016'; ... % Outlet channel migration widening lagoon
-                     '19Jan2017','22Jan2017'; ... % River flood lagoon widening
-                     '16Feb2017','28Feb2017'; ... % Unusual southwards offset driven by southwards longshore transport - sufficient to cause perched lagoon level
-                     '13Jun2017','16Jun2017'; ... % Wave overtopping lagoon narrowing
-                     '21Jul2017','23Jul2017'};    % Primary breach (+ some wave overtopping narrowing and some flood widening!)
+Config.KeyPeriods = {'12Oct2015','01Nov2015'; ... % A Well connected lagoon - short outlet channel
+                     '05Nov2015','29Nov2015'; ... % B Perched lagoon with extended outlet - at end of period small seaward truncation of outlet channel
+                     '12May2016','15May2016'; ... % C Outlet channel migration widening lagoon
+                     '13Jul2016','15Jul2016'; ... % D Lagoon flood due to small river flood when already perched
+                     '18Nov2016','20Nov2016'; ... % E Outlet channel migration widening lagoon
+                     '19Jan2017','22Jan2017'; ... % F River flood lagoon widening
+                     '16Feb2017','28Feb2017'; ... % G Unusual southwards offset driven by southwards longshore transport - sufficient to cause perched lagoon level
+                     '13Jun2017','16Jun2017'; ... % H Wave overtopping lagoon narrowing
+                     '21Jul2017','23Jul2017';};   % I Primary breach (+ some wave overtopping narrowing and some flood widening!)
 % Config.KeyPeriods = {'19Jan2017','22Jan2017'; ... % River flood lagoon widening
 %                    '01May2017','10Jun2017'; ... % Migration
 %                    '13Jun2017','16Jun2017'; ... % Wave overtopping lagoon narrowing

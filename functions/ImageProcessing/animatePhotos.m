@@ -198,7 +198,7 @@ writerObj = VideoWriter(VideoName,'MPEG-4');
 
 % set relevant properties
 writerObj.FrameRate = Framerate;
-writerObj.Quality = 70;
+writerObj.Quality = 85;
 
 % open ready for writing to
 open(writerObj);

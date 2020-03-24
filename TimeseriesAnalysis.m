@@ -306,25 +306,31 @@ WaveModTS.Hsig_Offshore = WaveModTS.Hsig ./ ...
                           ((1./(2*WaveModTS.n_10m)) .* ...
                            (WaveModTS.LoffRatio) .* ...
                            (cos(WaveModTS.Angle_Offshore)./cos(WaveModTS.Angle_10m))).^0.5;
-   
-% 2% Exceedence runup height [m] (Stockdon et al 2006)
-WaveModTS.Runup1 = 1.1 * (0.35 * Config.Beachslope * (WaveModTS.Hsig_Offshore .* WaveModTS.Wlen_Offshore).^0.5 + ...
-                          (WaveModTS.Hsig_Offshore .* WaveModTS.Wlen_Offshore * (0.563 * Config.Beachslope^2 + 0.004)).^0.5 / 2);
-                  
-% 2% Exceedence runup height [m] (Poate et al 2016 eq11) assuming Tz~Tm02
-WaveModTS.Runup2 = 0.49 * Config.Beachslope^0.5 * WaveModTS.Tm02 .* WaveModTS.Hsig_Offshore;
 
-% Compare runup from the 2 equations
-figure
-histogram(WaveModTS.Runup1,'BinWidth',0.1, ...
-          'Normalization', 'probability')
-hold on
-histogram(WaveModTS.Runup2,'BinWidth',0.1, ...
-          'Normalization', 'probability')
-xlabel('2% runup height above still water level (m)')
-ylabel('Proportion of time')
-legend({'Stockdon et al (2006)','Poate et al (2016)'})
-export_fig 'outputs\RunupComparison1.png' -m 5
+for Beachslope = [0.06,0.13,0.20]
+                       
+    % 2% Exceedence runup height [m] (Stockdon et al 2006)
+    WaveModTS.Runup1 = 1.1 * (0.35 * Beachslope * (WaveModTS.Hsig_Offshore .* WaveModTS.Wlen_Offshore).^0.5 + ...
+                              (WaveModTS.Hsig_Offshore .* WaveModTS.Wlen_Offshore * (0.563 * Beachslope^2 + 0.004)).^0.5 / 2);
+
+    % 2% Exceedence runup height [m] (Poate et al 2016 eq11) assuming Tz~Tm02
+    WaveModTS.Runup2 = 0.49 * Beachslope^0.5 * WaveModTS.Tm02 .* WaveModTS.Hsig_Offshore;
+
+    % Compare runup from the 2 equations
+    figure
+    histogram(WaveModTS.Runup1,'BinWidth',0.1, ...
+              'Normalization', 'probability')
+    hold on
+    histogram(WaveModTS.Runup2,'BinWidth',0.1, ...
+              'Normalization', 'probability')
+    xlabel('2% runup height above still water level (m)')
+    ylabel('Proportion of time')
+    xlim([0,5])
+    ylim([0,0.25])
+    legend({'Stockdon et al (2006)','Poate et al (2016)'})
+    title(sprintf('Beach slope = %i%%', 100*Beachslope))
+    export_fig(sprintf('outputs\\RunupComparison1_%i.png', 100*Beachslope), '-m5')
+end
 
 figure
 scatter(WaveModTS.Runup1, WaveModTS.Runup2, 6, 'filled', ...
